@@ -39,11 +39,15 @@ RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-updates main restricted un
 RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse  >> /etc/apt/sources.list
 RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse  >> /etc/apt/sources.list
 RUN apt-get update
-RUN apt -qqy install libx11-dev xserver-xorg libfontconfig1 libxt6 libxcomposite1 libasound2 libxext6 texlive-xetex
+RUN apt -qqy install libx11-dev xserver-xorg libfontconfig1 libxt6 libxcomposite1 libasound2 libxext6 texlive-xetex 
 
-RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=13pZYD3ZS89SfDWsakIbZGV5Bgyen2qv7' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=13pZYD3ZS89SfDWsakIbZGV5Bgyen2qv7" -O Compilation_lesionBrain_v10.zip && rm -rf /tmp/cookies.txt
+RUN apt -qqy install wget
+
+RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1lNBVACRXAHqgw5TKpHO_6tchve16W2zI' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1lNBVACRXAHqgw5TKpHO_6tchve16W2zI" -O Compilation_lesionBrain_v10.zip && rm -rf /tmp/cookies.txt
+
 RUN unzip Compilation_lesionBrain_v10.zip
-RUN cp -avr Compilation_lesionBrain_v10 /opt/deeplesionbrain
+
+RUN cp -avr Compilation_lesionBrain_v10/* /opt/deeplesionbrain
 
 RUN pip3 install scikit-learn statsmodels  keras==2.2.4 pillow nibabel==2.5.2 scikit-image==0.17.2
 RUN mkdir /Weights
@@ -53,7 +57,8 @@ RUN unzip trained_all_second_step_iqda.zip
 RUN cp -avr trained_all_second_step_iqda/* /Weights/
 
 RUN ls /Weights/
+RUN apt -qqy install git
 RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
-RUN cp -avr DLB_docker /opt/deeplesionbrain
+RUN cp -avr DLB_docker/* /opt/deeplesionbrain
 
 RUN mkdir /data/
