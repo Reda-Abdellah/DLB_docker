@@ -35,7 +35,7 @@ else:
 
 
 
-mni_T1_name, mni_flair_name, mni_mask_name, intot1, to_mni_affine= preprocess_file(nativeT1_name, nativeFLAIR_name)
+mni_T1_name, mni_flair_name, mni_mask_name, intot1, to_mni_affine, crisp_filename, hemi_fileneame, structures_filename = preprocess_file(nativeT1_name, nativeFLAIR_name)
 Weights_list= keyword_toList(path='/Weights/',keyword='.h5')
 mni_lesions_name= segment_image(nbNN=[5,5,5], ps=[96,96,96],
                 Weights_list=Weights_list,
@@ -43,7 +43,8 @@ mni_lesions_name= segment_image(nbNN=[5,5,5], ps=[96,96,96],
                 FG=mni_mask_name, normalization="kde")
 native_lesion= to_native(mni_lesions_name,to_mni_affine,nativeT1_name)
 native_mask= to_native(mni_mask_name,to_mni_affine,nativeT1_name)
-
+unfiltred_t1_filename= mni_T1_name.replace('t1', 'unfiltred')
+to_MNI(nativeT1_name,unfiltred_t1_filename,nativeT1_name,mni_T1_name)
 
 os.system('gzip '+mni_mask_name)
 os.system('gzip '+mni_flair_name)
@@ -53,16 +54,12 @@ os.system('gzip '+nativeFLAIR_name)
 os.system('gzip '+nativeT1_name)
 os.system('gzip '+native_lesion)
 os.system('gzip '+native_mask)
+os.system('gzip '+crisp_filename)
+os.system('gzip '+hemi_fileneame)
+os.system('gzip '+structures_filename)
 
-#os.remove(args.t1)
-#os.remove(args.flair)
-"""
-mni_T1_name="preprocessed_mni_200_t1.nii.gz"
-mni_flair_name="preprocessed_mni_200_flair.nii.gz"
-mni_mask_name="preprocessed_mni_200_mask.nii.gz"
-mni_lesions_name=""
-to_mni_affine=""
-"""
 
 if(not args.no_report):
-    report(nativeT1_name+'.gz', mni_T1_name+'.gz', mni_flair_name+'.gz', mni_mask_name+'.gz', mni_lesions_name+'.gz',to_mni_affine, args.age, args.sex)
+    report(unfiltred_t1_filename, mni_T1_name+'.gz', mni_flair_name+'.gz', mni_mask_name+'.gz', mni_lesions_name+'.gz',
+            to_mni_affine,crisp_filename+'.gz', hemi_fileneame+'.gz',structures_filename+'.gz', args.age, args.sex)
+os.remove(unfiltred_t1_filename)

@@ -39,11 +39,11 @@ RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-updates main restricted un
 RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse  >> /etc/apt/sources.list
 RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse  >> /etc/apt/sources.list
 RUN apt-get update
-RUN apt -qqy install libx11-dev xserver-xorg libfontconfig1 libxt6 libxcomposite1 libasound2 libxext6 texlive-xetex 
+RUN apt -qqy install libx11-dev xserver-xorg libfontconfig1 libxt6 libxcomposite1 libasound2 libxext6 texlive-xetex
 
 RUN apt -qqy install wget
 
-RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1lNBVACRXAHqgw5TKpHO_6tchve16W2zI' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1lNBVACRXAHqgw5TKpHO_6tchve16W2zI" -O Compilation_lesionBrain_v10.zip && rm -rf /tmp/cookies.txt
+RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1FkcruF4AeJjgmcVpfKQgbrMXOvG2bO7D' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1FkcruF4AeJjgmcVpfKQgbrMXOvG2bO7D" -O Compilation_lesionBrain_v10.zip && rm -rf /tmp/cookies.txt
 
 RUN unzip Compilation_lesionBrain_v10.zip
 
@@ -52,7 +52,7 @@ RUN cp -avr Compilation_lesionBrain_v10/* /opt/deeplesionbrain
 RUN pip3 install scikit-learn statsmodels  keras==2.2.4 pillow nibabel==2.5.2 scikit-image==0.17.2
 RUN mkdir /Weights
 #COPY trained_all_second_step_iqda/* /Weights/
-RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1XgcUEek_sILlCJMzuIR-7Ti0nHHJLwdN' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1XgcUEek_sILlCJMzuIR-7Ti0nHHJLwdN" -O trained_all_second_step_iqda.zip && rm -rf /tmp/cookies.txt
+RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=173WL522gY3fLF1VTP6Mc0lMO2LMulBth' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=173WL522gY3fLF1VTP6Mc0lMO2LMulBth" -O trained_all_second_step_iqda.zip && rm -rf /tmp/cookies.txt
 RUN unzip trained_all_second_step_iqda.zip
 RUN cp -avr trained_all_second_step_iqda/* /Weights/
 

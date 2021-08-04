@@ -227,3 +227,10 @@ def to_native(inputname,transform_name,reference_name):
     print(str(command))
     os.system(str(command))
     return outputname
+
+def to_MNI(inputname,outputname,transform_name,reference_name):
+    ants_bin='/opt/deeplesionbrain/Registration/antsApplyTransforms'
+    command=ants_bin+' -d 3 -i ' + inputname+' -r ' + reference_name +' -o ' +outputname + ' -n BSpline -t ' + transform_name
+    print(str(command))
+    os.system(str(command))
+    return outputname

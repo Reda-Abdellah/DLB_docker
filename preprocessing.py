@@ -3,7 +3,6 @@ from shutil import copyfile
 from utils import *
 
 def preprocess_folder(in_folder_path,T1Keyword="T1",FLAIRKeyword='FLAIR'): #receives absolute path
-
     listaT1 = keyword_toList(in_folder_path,T1Keyword)
     listaFLAIR = keyword_toList(in_folder_path,FLAIRKeyword)
     mni_FLAIRs=[]
@@ -42,7 +41,7 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name): #receives absolute path
     newFLAIR=nativeFLAIR_name.replace('native_','preprocessed_mni_')
     copyfile(nativeT1_name,newT1)
     copyfile(nativeFLAIR_name,newFLAIR)
-    bin='./lesionBrain_v10_preprocessing_exe'
+    bin='./lesionBrain_v11_fullpreprocessing_exe'
     command=bin+' '+nativeT1_name+' '+nativeFLAIR_name
     os.system(command)
     outT1=nativeT1_name.replace('.nii','_check.nii')
@@ -53,6 +52,12 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name): #receives absolute path
     out_affine=out_affine.replace('native_','affine_mfnative_')
     outFLAIR=outT1.replace('t1', 'flair')
     outMASK=outT1.replace('n_mfmni_','mask_n_mfmni_')
+    out_crisp_filename=outT1.replace('n_mfmni_','crisp_mfmni_')
+    out_hemi_fileneame= outT1.replace('n_mfmni_','hemi_n_mfmni_')
+    out_structures_filename = outT1.replace('n_mfmni_','lab_n_mfmni_')
+    new_crisp_filename=newT1.replace('t1','crisp')
+    new_hemi_fileneame= newT1.replace('t1','hemi')
+    new_structures_filename = newT1.replace('t1','structure')
     new_mask=newT1.replace('t1','mask')
     new_intot1=nativeFLAIR_name.replace('native_','affine_intot1_fmni_').replace('.nii','.txt')
     new_affine=nativeT1_name.replace('native_','affine_mfmni_').replace('.nii','.txt')
@@ -63,7 +68,7 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name): #receives absolute path
     os.rename(out_affine, new_affine)
     os.remove(nativeT1_name.replace('.nii','_check.nii'))
     os.remove(nativeFLAIR_name.replace('.nii','_check.nii'))
-    return newT1, newFLAIR, new_mask, new_intot1, new_affine
+    return newT1, newFLAIR, new_mask, new_intot1, new_affine, new_crisp_filename, new_hemi_fileneame, new_structures_filename
 
 
 def ground_truth_toMNI(in_folder_path,preprocessed_out_folder,SEG_keyword):
