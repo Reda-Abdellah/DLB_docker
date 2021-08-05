@@ -41,7 +41,7 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name): #receives absolute path
     newFLAIR=nativeFLAIR_name.replace('native_','preprocessed_mni_')
     copyfile(nativeT1_name,newT1)
     copyfile(nativeFLAIR_name,newFLAIR)
-    bin='sudo ./lesionBrain_v11_fullpreprocessing_exe'
+    bin='./lesionBrain_v11_fullpreprocessing_exe'
     command=bin+' '+nativeT1_name+' '+nativeFLAIR_name
     os.system(command)
     outT1=nativeT1_name.replace('.nii','_check.nii')
@@ -72,7 +72,7 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name): #receives absolute path
 
 
 def ground_truth_toMNI(in_folder_path,preprocessed_out_folder,SEG_keyword):
-    ants_bin='sudo ./Registration/antsApplyTransforms'
+    ants_bin='./Registration/antsApplyTransforms'
     for seg_keyword in SEG_keyword:
         listaSEG = keyword_toList(in_folder_path,seg_keyword)
         for inputname in listaSEG:
