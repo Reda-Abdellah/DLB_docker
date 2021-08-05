@@ -47,18 +47,18 @@ RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=down
 
 RUN unzip Compilation_lesionBrain_v10.zip
 
-RUN cp -avr Compilation_lesionBrain_v10/* /opt/deeplesionbrain
+RUN mv Compilation_lesionBrain_v11_fullpreprocessing/* /opt/deeplesionbrain
 
 RUN pip3 install scikit-learn statsmodels  keras==2.2.4 pillow nibabel==2.5.2 scikit-image==0.17.2
 RUN mkdir /Weights
 #COPY trained_all_second_step_iqda/* /Weights/
 RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=173WL522gY3fLF1VTP6Mc0lMO2LMulBth' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=173WL522gY3fLF1VTP6Mc0lMO2LMulBth" -O trained_all_second_step_iqda.zip && rm -rf /tmp/cookies.txt
 RUN unzip trained_all_second_step_iqda.zip
-RUN cp -avr trained_all_second_step_iqda/* /Weights/
+RUN mv 1st_step_volbrain_2nd_all_labeled/* /Weights/
 
 RUN ls /Weights/
 RUN apt -qqy install git
 RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
-RUN cp -avr DLB_docker/* /opt/deeplesionbrain
+RUN mv DLB_docker/* /opt/deeplesionbrain
 
 RUN mkdir /data/

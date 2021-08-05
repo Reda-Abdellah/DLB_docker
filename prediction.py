@@ -221,7 +221,7 @@ def get_symetric_tile(ii,nbNN):
 
 def to_native(inputname,transform_name,reference_name):
     outputname= inputname.replace('mni','native')
-    ants_bin='/opt/deeplesionbrain/Registration/antsApplyTransforms'
+    ants_bin='sudo /opt/deeplesionbrain/Registration/antsApplyTransforms'
     #ants_bin='../Compilation_lesionBrain_v10/Registration/antsApplyTransforms'
     command=ants_bin+' -d 3 -i ' + inputname+' -r ' + reference_name +' -o ' +outputname + ' -n MultiLabel[0.3,0] -t [' + transform_name +', 1]';
     print(str(command))
@@ -229,7 +229,7 @@ def to_native(inputname,transform_name,reference_name):
     return outputname
 
 def to_MNI(inputname,outputname,transform_name,reference_name):
-    ants_bin='/opt/deeplesionbrain/Registration/antsApplyTransforms'
+    ants_bin='sudo /opt/deeplesionbrain/Registration/antsApplyTransforms'
     command=ants_bin+' -d 3 -i ' + inputname+' -r ' + reference_name +' -o ' +outputname + ' -n BSpline -t ' + transform_name
     print(str(command))
     os.system(str(command))
