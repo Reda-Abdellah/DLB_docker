@@ -1,5 +1,5 @@
-from prediction import segment_image, to_native
-from preprocessing import preprocess_file,ground_truth_toMNI
+from prediction import *
+from preprocessing import *
 import json,os,shutil
 from report_utils import *
 from make_reports import *
