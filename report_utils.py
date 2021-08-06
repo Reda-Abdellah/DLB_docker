@@ -201,7 +201,6 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         sex='male'
     structure=['White matter', 'Grey matter' ,'Cerebrospinal fluid']
     filenames=['WM.png','GM.png','CSF.png']
-    tissue_vol=[30,30,30]
     dataset=load_obj('normal_crisp_volume_by_age')
     normal_vol=[]
     for i in range(3):
