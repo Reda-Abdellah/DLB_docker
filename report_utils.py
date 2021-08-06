@@ -133,65 +133,6 @@ def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesio
     nii.Nifti1Image(lesion2, T1_img.affine).to_filename(classified_name)
     return classified_name, region_name, wm_name
 
-def usage(prog):
-    print("Usage: {} [--age <age>] [--sex <sex>] input_t1 input_flair".format(prog))
-    sys.exit()
-
-def process_args_old(argv):
-    num_args=len(argv)
-    print("num_args=", num_args)
-    if (num_args != 3) and (num_args != 5) and (num_args != 7):
-        usage(argv[0])
-    else:
-        input_filename=""
-        age=""
-        sex=""
-        if (num_args == 7):
-            input_filename_t1=argv[5]
-            input_filename_flair=argv[6]
-            if (argv[1] == "--age" and argv[3] == "--sex"):
-                age=argv[2]
-                sex=argv[4]
-            elif (argv[1] == "--sex" and argv[3] == "--age"):
-                sex=argv[2]
-                age=argv[4]
-            else:
-                usage(argv[0])
-        elif (num_args == 5):
-            input_filename_t1=argv[3]
-            input_filename_flair=argv[4]
-            if (argv[1] == "--age" and argv[2] != "--sex"):
-                age=argv[2]
-            elif (argv[1] == "--sex" and argv[2] != "--age"):
-                sex=argv[2]
-        elif (num_args == 3):
-            input_filename_t1=argv[1]
-            input_filename_flair=argv[2]
-    return input_filename_t1, input_filename_flair, age, sex
-
-def process_args(argv):
-    return argv[1], argv[2], argv[4], argv[6]
-
-def get_filename(filename, prefix, suffixe=""):
-    d = os.path.dirname(filename)
-    b = os.path.basename(filename)
-    if suffixe != "":
-        b = b.replace(".nii.gz", suffixe).replace(".nii", suffixe)
-    return os.path.join(d, prefix+b)
-
-def get_filenames(input_filename):
-    dirname = os.path.dirname(input_filename)
-    basename = os.path.basename(input_filename).replace('.nii', '_check.nii')
-    root, ext = os.path.splitext(basename)
-    orig_filename = input_filename
-    #filtered_filename = os.path.join(dirname, "f"+basename)
-    T1_filename = os.path.join(dirname, "n_mfmni_f"+basename) #TODO: change ???
-    LAB_filename = os.path.join(dirname, "seg_1mm_n_mfmni_f"+basename) #mni_structures_
-    MASK_filename = os.path.join(dirname, "mask_n_mfmni_f"+basename) #mni_mask_
-    transform_filename = os.path.join(dirname, "affine_mf"+root+"Affine.txt")  #TODO: change ???
-    #TODO: check files exist ?
-    return orig_filename, T1_filename, LAB_filename, MASK_filename, transform_filename
-
 def compute_volumes(im, labels, scale):
     assert(type(labels) is list)
     vols=[]
@@ -275,7 +216,7 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         plt.xlabel('age')
         plt.ylabel('volume (%)')
         if(not age=='uknown'):
-            plt.plot([int(age)],[100*tissue_vol[i]/vol_ice], 'ro')
+            plt.plot([int(age)],[int(100*tissue_vol[i]/vol_ice)], 'ro')
             normal_vol.append([y2[int(age)],y1[int(age)]])
         plt.savefig(filenames[i], dpi=300)
         plt.clf()
@@ -500,11 +441,10 @@ def get_tissue_plot(out, filenames_normal_tissue):
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\vspace*{30pt}\n').safe_substitute())
 
-
 def save_pdf(input_file, age, gender, vols_tissue,vol_ice, snr, orientation_report,filenames_normal_tissue, normal_vol,
         scale,colors_ice, colors_lesions,colors_tissue,lesion_types_filename,
         plot_images_filenames):
-    basename=os.path.basename(input_file).replace("preprocessed_mni_", "").replace("_t1", "").replace(".nii", "")
+    basename=os.path.basename(input_file).replace("preprocessed_mni_", "").replace("_t1", "").replace(".nii.gz", "")
     output_tex_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".tex").replace("preprocessed_mni","report")
     print("output_tex_filename=", output_tex_filename)
 
@@ -596,7 +536,6 @@ def save_csv(input_file, vols):
         for i in range(0, len(vols)):
             row.extend([str(vols[i])])
         csv_writer.writerow(row)
-
 
 def save_images(suffixe, slice_index, FLAIR_slice,CRISP_slice,
                 LAB_slice, MASK_slice, colors_ice,
