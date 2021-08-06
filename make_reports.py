@@ -38,7 +38,7 @@ def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_
     colors_tissue= np.array([[0,0,0],[255,0,0], [0,255,0], [0,0,255]])
     colors_ice= np.array([[0,0,0],[255,165,0]])
 
-    lesion_types_filename, region_name, wm_name= get_lesion_info(input_t1_filename, crisp_filename, hemi_fileneame, structures_filename, LAB_filename)
+    lesion_types_filename, region_name, wm_name= get_lesion_by_regions(input_t1_filename, crisp_filename, hemi_fileneame, structures_filename, LAB_filename)
     lesion_types=nii.load(lesion_types_filename).get_data()
 
     ## Axial

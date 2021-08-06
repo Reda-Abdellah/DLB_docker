@@ -40,7 +40,7 @@ def load_obj(name ):
     with open(name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-def get_lesion_info(fname, fname_crisp, fname_hemi, fname_lab, fname_lesion):
+def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesion):
 
     juxtacortical_idx=3
     deepwhite_idx=2
@@ -129,7 +129,7 @@ def get_lesion_info(fname, fname_crisp, fname_hemi, fname_lab, fname_lesion):
             lesion2[ind]=deepwhite_idx
 
 
-    classified_name= fname_crisp.replace('crisp','classified')
+    classified_name= fname_crisp.replace('crisp','lesions_types_')
     nii.Nifti1Image(lesion2, T1_img.affine).to_filename(classified_name)
     return classified_name, region_name, wm_name
 
@@ -275,7 +275,7 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         plt.xlabel('age')
         plt.ylabel('volume (%)')
         if(not age=='uknown'):
-            plt.plot([int(age)],[tissue_vol[i]/vol_ice], 'ro')
+            plt.plot([int(age)],[100*tissue_vol[i]/vol_ice], 'ro')
             normal_vol.append([y2[int(age)],y1[int(age)]])
         plt.savefig(filenames[i], dpi=300)
         plt.clf()
@@ -371,10 +371,10 @@ def write_lesions(out, lesion_types_filename, scale):
     types=['healthy','Periventricular','Deepwhite','Juxtacortical','Cerebelar','Medular']
     lesion_mask = nii.load(lesion_types_filename).get_data()
     vol_tot = (compute_volumes((lesion_mask>0).astype('int'), [[1]], scale))[0]
+    lesion_number=1
     for i in range(1,6):
         lesion_type= (lesion_mask==i).astype('int')
         seg_labels, seg_num = label(lesion_type, return_num=True, connectivity=2)
-
         if(seg_num>0):
             out.write(Template('\n').safe_substitute())
             out.write(Template('\\begin{tabularx}{0.9\\textwidth}{ X \centering{X} \centering{X} \centering{X} }\n').safe_substitute())
@@ -384,7 +384,8 @@ def write_lesions(out, lesion_types_filename, scale):
                 pos=center_of_mass(lesion)
                 pos=[int(pos[0]),int(pos[1]),int(pos[2])]
                 vol = (compute_volumes(lesion, [[1]], scale))[0]
-                out.write(Template('Lesion $p & $g & $a & $d\\\\ \n').safe_substitute(p=j, g="{:5.2f}".format(vol), a="{:5.2f}".format(vol*100/vol_tot), d=pos))
+                out.write(Template('Lesion $p & $g & $a & $d\\\\ \n').safe_substitute(p=lesion_number, g="{:5.2f}".format(vol), a="{:5.2f}".format(vol*100/vol_tot), d=pos))
+                lesion_number=lesion_number+1
             out.write(Template('\\end{tabularx}\n').safe_substitute())
             out.write(Template('\n').safe_substitute())
             out.write(Template('\\vspace*{10pt}\n').safe_substitute())
@@ -503,9 +504,8 @@ def get_tissue_plot(out, filenames_normal_tissue):
 def save_pdf(input_file, age, gender, vols_tissue,vol_ice, snr, orientation_report,filenames_normal_tissue, normal_vol,
         scale,colors_ice, colors_lesions,colors_tissue,lesion_types_filename,
         plot_images_filenames):
-    #assert(len(vols)==len(labels_SLANT)+1)
-    basename=os.path.basename(input_file).replace("preprocessed_mni_", "").replace("t1", "").replace(".nii", "")
-    output_tex_filename = input_file.replace("n_mmni_f", "").replace(".nii.gz", ".nii").replace(".nii", ".tex") #get_filename(input_file, "report_", ".tex")
+    basename=os.path.basename(input_file).replace("preprocessed_mni_", "").replace("_t1", "").replace(".nii", "")
+    output_tex_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".tex").replace("preprocessed_mni","report")
     print("output_tex_filename=", output_tex_filename)
 
     with open(output_tex_filename, 'w', newline='') as out:
