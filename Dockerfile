@@ -60,7 +60,6 @@ RUN apt -qqy install git
 
 RUN chmod 777 -R /opt/deeplesionbrain/*
 
-RUN ls
 
 RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
 RUN mv DLB_docker/* /opt/deeplesionbrain
