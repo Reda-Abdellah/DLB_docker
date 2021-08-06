@@ -254,6 +254,10 @@ def readITKtransform( transform_file ):
     return transform
 
 def get_expected_volumes(age, sex, tissue_vol, vol_ice):
+    if(sex=='f' or sex=='femme' or sex=='woman' ):
+        sex='female'
+    if(sex=='m' or sex=='homme' or sex=='man' ):
+        sex='male'
     structure=['White matter', 'Grey matter' ,'Cerebrospinal fluid']
     filenames=['WM.png','GM.png','CSF.png']
     tissue_vol=[30,30,30]
