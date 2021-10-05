@@ -1,10 +1,21 @@
-from keras.models import load_model
-from keras import backend as K
+import os
+os.environ['TF_ENABLE_DEPRECATION_WARNINGS'] = '0'
+os.environ['TF_DETERMINISTIC_OPS'] = '1'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # 0 is DEBUG, 1 is INFO, 2 is WARNING, 3 is ERROR only
 import tensorflow as tf
 import numpy as np
+# For reproducibility ################
+import random as python_random
+seed = 1973
+np.random.seed(seed)
+python_random.seed(seed)
+tf.compat.v1.set_random_seed(seed)
+######################################
+from keras.models import load_model
+from keras import backend as K
 from scipy import ndimage
 import nibabel as nii
-import os, glob, time, gc, datetime
+import glob, time, gc, datetime
 import modelos
 import scipy.misc
 from scipy import signal
@@ -17,6 +28,20 @@ from collections import OrderedDict, defaultdict
 from skimage import measure
 from scipy.stats import pearsonr
 from utils import *
+
+
+# Silence deprecation warnings
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+from tensorflow.python.util import deprecation
+deprecation._PRINT_DEPRECATION_WARNINGS = False
+# Use only first GPU
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+# Use only necessary memory
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
+
+
 
 def normalize_image(vol, contrast):
     # copied from FLEXCONN
