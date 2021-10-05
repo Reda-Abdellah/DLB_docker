@@ -204,7 +204,7 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
     dataset=load_obj('normal_crisp_volume_by_age')
     normal_vol=[]
     for i in range(3):
-        if(sex=='uknown'):
+        if(sex=='unknown'):
             y1=(dataset['male'][i]['up']+dataset['female'][i]['up'])/2
             y2=(dataset['male'][i]['down']+dataset['female'][i]['down'])/2
         else:
@@ -214,7 +214,7 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         plt.title(structure[i])
         plt.xlabel('age')
         plt.ylabel('volume (%)')
-        if(not age=='uknown'):
+        if(not age=='unknown'):
             plt.plot([int(age)],[int(100*tissue_vol[i]/vol_ice)], 'ro')
             normal_vol.append([y2[int(age)],y1[int(age)]])
         plt.savefig(filenames[i], dpi=300)

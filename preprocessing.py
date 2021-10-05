@@ -37,13 +37,18 @@ def preprocess_folder(in_folder_path,T1Keyword="T1",FLAIRKeyword='FLAIR'): #rece
 
 def preprocess_file(nativeT1_name, nativeFLAIR_name): #receives absolute path
     print('processing: '+nativeT1_name+' and '+nativeFLAIR_name)
-    newT1=nativeT1_name.replace('native_','preprocessed_mni_')
-    newFLAIR=nativeFLAIR_name.replace('native_','preprocessed_mni_')
-    copyfile(nativeT1_name,newT1)
-    copyfile(nativeFLAIR_name,newFLAIR)
+    #copyfile(nativeT1_name,newT1)
+    #copyfile(nativeFLAIR_name,newFLAIR)
     bin='./lesionBrain_v11_fullpreprocessing_exe'
     command=bin+' '+nativeT1_name+' '+nativeFLAIR_name
     os.system(command)
+
+    assert os.path.isfile(os.path.join(os.path.dirname(nativeT1_name), 'n_mfmni_f'+os.path.basename(nativeT1_name).replace('.nii', '_check.nii')))
+    assert os.path.isfile(os.path.join(os.path.dirname(nativeFLAIR_name), 'n_mfmni_f'+os.path.basename(nativeFLAIR_name).replace('.nii', '_check.nii')))
+
+    newT1=nativeT1_name.replace('native_','preprocessed_mni_')
+    newFLAIR=nativeFLAIR_name.replace('native_','preprocessed_mni_')
+
     outT1=nativeT1_name.replace('.nii','_check.nii')
     outT1=outT1.replace('native_','n_mfmni_fnative_')
     out_intot1=nativeFLAIR_name.replace('.nii','_checkAffine.txt')
@@ -94,4 +99,4 @@ def ground_truth_toMNI(in_folder_path,preprocessed_out_folder,SEG_keyword):
     files_list=keyword_toList(preprocessed_out_folder,'.')
     for file in files_list:
         if(not ('.gz' in file) ):
-            os.system('gzip '+file)
+            os.system('gzip -f -9 '+file)
