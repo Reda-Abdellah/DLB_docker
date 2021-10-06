@@ -93,8 +93,8 @@ def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesio
     regions[ind]=5
 
     #result
-    region_name= fname_crisp.replace('crisp','regions')
-    wm_name= fname_crisp.replace('crisp','wmmap')
+    region_name= fname_crisp.replace('tissues','regions')
+    wm_name= fname_crisp.replace('tissues','wmmap')
     nii.Nifti1Image(regions, T1_img.affine).to_filename(region_name)
     nii.Nifti1Image(wm, T1_img.affine).to_filename(wm_name)
 
@@ -129,7 +129,7 @@ def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesio
             lesion2[ind]=deepwhite_idx
 
 
-    classified_name= fname_crisp.replace('crisp','lesions_types_')
+    classified_name= fname.replace('t1','lesions')
     nii.Nifti1Image(lesion2, T1_img.affine).to_filename(classified_name)
     return classified_name, region_name, wm_name
 
@@ -195,7 +195,7 @@ def readITKtransform( transform_file ):
     return transform
 
 def get_expected_volumes(age, sex, tissue_vol, vol_ice):
-    plt.rcParams.update({'font.size': 25})
+    plt.rcParams.update({'font.size': 22})
     if(sex=='f' or sex=='femme' or sex=='woman' ):
         sex='female'
     if(sex=='m' or sex=='homme' or sex=='man' ):
@@ -304,7 +304,7 @@ def get_patient_id(input_file):
 def get_color_string(color):
     return Template('\\mycbox{{rgb,255:red,$r;green,$g;blue,$b}}').safe_substitute(r=color[0], g=color[1], b=color[2])
 
-def write_lesions(out, lesion_types_filename, scale):
+def write_lesions(out, lesion_types_filename, scale, WM_vol):
     types=['healthy','Periventricular','Deepwhite','Juxtacortical','Cerebelar','Medular']
     lesion_mask = nii.load(lesion_types_filename).get_data()
     vol_tot = (compute_volumes((lesion_mask>0).astype('int'), [[1]], scale))[0]
@@ -312,12 +312,12 @@ def write_lesions(out, lesion_types_filename, scale):
     all_lesions=[]
     les=(lesion_mask>0).astype('int')
     _, seg_num = label(les, return_num=True, connectivity=2)
-    all_lesions.append({'count':seg_num-1 ,'volume_abs':vol_tot , 'volume_rel':vol_tot*100/vol_tot, 'burden': les.sum() })
+    all_lesions.append({'count':seg_num ,'volume_abs':vol_tot , 'volume_rel':vol_tot*100/vol_tot, 'burden': vol_tot*100/WM_vol })
     for i in range(1,6):
         lesion_type= (lesion_mask==i).astype('int')
         seg_labels, seg_num = label(lesion_type, return_num=True, connectivity=2)
         vol = (compute_volumes(lesion_type, [[1]], scale))[0]
-        all_lesions_type={'count':seg_num-1 ,'volume_abs':vol , 'volume_rel':vol*100/vol_tot, 'burden': lesion_type.sum() }
+        all_lesions_type={'count':seg_num ,'volume_abs':vol , 'volume_rel':vol*100/vol_tot, 'burden': vol*100/WM_vol  }
         if(seg_num>0):
             out.write(Template('\n').safe_substitute())
             out.write(Template('\\begin{tabularx}{0.9\\textwidth}{ X \centering{X} \centering{X} \centering{X} }\n').safe_substitute())
@@ -457,7 +457,7 @@ def get_tissue_plot(out, filenames_normal_tissue):
 def save_pdf(input_file, age, gender, vols_tissue,vol_ice, snr, orientation_report,filenames_normal_tissue, normal_vol,
         scale,colors_ice, colors_lesions,colors_tissue,lesion_types_filename,
         plot_images_filenames):
-    basename=os.path.basename(input_file).replace("mni_", "").replace("_t1", "").replace(".nii.gz", "")
+    basename=os.path.basename(input_file).replace("mni_", "").replace("t1_", "").replace(".nii.gz", "")
     output_tex_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".tex").replace("mni","report")
     print("output_tex_filename=", output_tex_filename)
 
@@ -512,7 +512,7 @@ def save_pdf(input_file, age, gender, vols_tissue,vol_ice, snr, orientation_repo
 
         #Lesion type tables
         print('Lesion type tables....')
-        all_lesions= write_lesions(out, lesion_types_filename, scale)
+        all_lesions= write_lesions(out, lesion_types_filename, scale, vols_tissue[2])
 
         #Footnotes
         out.write(Template('\\textcolor{blue}{\\footnotesize \\itshape *All the volumes are presented in absolute value (measured in $mm^{3}$) and in relative value (measured in relation to the IC volume).}\\\\*\n').safe_substitute())
@@ -536,7 +536,7 @@ def save_pdf(input_file, age, gender, vols_tissue,vol_ice, snr, orientation_repo
         return all_lesions
 
 def save_csv(input_file,  age, gender, all_lesions ,vol_ice, snr, scale):
-    basename=os.path.basename(input_file).replace("mni_", "").replace("_t1", "").replace(".nii.gz", "")
+    basename=os.path.basename(input_file).replace("mni_", "").replace("t1_", "").replace(".nii.gz", "")
     output_csv_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".csv").replace("mni","report")
     first_row=['Patient ID', 'Sex',	'Age',	'Report Date',	'Scale factor',	'SNR',	#'mSNR',
     	'ICV cm3',
@@ -554,26 +554,27 @@ def save_csv(input_file,  age, gender, all_lesions ,vol_ice, snr, scale):
         row = []
         csv_writer.writerow(first_row)
         #write labels names
-        row.extend(basename)
-        row.extend(str(gender) )
-        row.extend(str(age))
-        row.extend(str(release_date))
-        row.extend(str(scale))
-        row.extend(str(snr) )
+        row.append(basename)
+        row.append(str(gender) )
+        row.append(str(age))
+        row.append(str(release_date))
+        row.append(str(scale))
+        row.append(str(snr) )
         #row.extend(str (snr))
         # DO mSNR
         # verify order of lesion type
         #{'count':seg_num-1 ,'volume_abs':vol_tot , 'volume_rel':vol_tot*100/vol_tot, 'burden': lesion_type.sum() }
         #juxtacortical_idx=3     deepwhite_idx=2     periventricular_idx=1     cerebelar_idx=4     medular_idx=5
 
-        row.extend(str(vol_ice))
+        row.append(str(vol_ice))
 
 
         for lesion_info in all_lesions:
-            row.extend(str(lesion_info['count']))
-            row.extend(str(lesion_info['volume_abs']))
-            row.extend(str(lesion_info['volume_rel']))
-            row.extend(str(lesion_info['burden']))
+            #print(lesion_info)
+            row.append(str(lesion_info['count']))
+            row.append(str(lesion_info['volume_abs']))
+            row.append(str(lesion_info['volume_rel']))
+            row.append(str(lesion_info['burden']))
         
         csv_writer.writerow(row)
 

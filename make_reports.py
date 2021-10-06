@@ -70,17 +70,17 @@ def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_
     save_csv(input_t1_filename,  age, sex, all_lesions ,vol_ice, snr, scale)
 
 """
-report(unfiltred_t1_filename='/data/mni__unfiltred.nii',
-input_t1_filename='/data/mni__t1.nii.gz',
- input_flair_filename='/data/mni__flair.nii.gz',
-  MASK_filename='/data/mni__mask.nii.gz',
-   LAB_filename='/data/mni_.nii.gz',
-   transform_filename='/data/affine_mfmni__t1.txt',
-    crisp_filename='/data/mni_tissues_.nii.gz',
-     hemi_fileneame='/data/mni_hemi_.nii.gz',
-     structures_filename='/data/mni_structure_.nii.gz',
+report(unfiltred_t1_filename='/data/mni_t1_jobXXX.nii.gz',
+input_t1_filename='/data/mni_t1_jobXXX.nii.gz',
+ input_flair_filename='/data/mni_flair_jobXXX.nii.gz',
+  MASK_filename='/data/mni_mask_jobXXX.nii.gz',
+   LAB_filename='/data/mni_lesions_jobXXX.nii.gz',
+   transform_filename='/data/affine_mfmni_t1_jobXXX.txt',
+    crisp_filename='/data/mni_tissues_jobXXX.nii.gz',
+     hemi_fileneame='/data/mni_hemi_jobXXX.nii.gz',
+     structures_filename='/data/mni_structure_jobXXX.nii.gz',
       age='21', sex='female')
 
-get_preview('data/mni__flair.nii.gz')
+#get_preview('data/mni__flair.nii.gz')
 #get_preview('mni_.nii.gz')
 #"""

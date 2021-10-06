@@ -90,7 +90,7 @@ def normalize_image(vol, contrast):
 def segment_image(nbNN, ps, Weights_list, T1, FLAIR, FG, normalization="kde"):
     crop_bg = 4
     first_time=1
-    out_name= T1.replace('t1',"lesions")
+    out_name= T1.replace('t1',"all_lesion")
     T1_img = nii.load(T1)
     T1=T1_img.get_data()
     T1=T1.astype('float32')

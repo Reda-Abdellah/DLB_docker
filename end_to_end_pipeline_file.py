@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(
 
 #parser.add_argument('-f', '--flair', type=str, required=True)
 #parser.add_argument('-t', '--t1', type=str, required=True)
-#parser.add_argument('-o', '--index_name', type=str, required=True)
+parser.add_argument('-o', '--index_name', type=str, default='jobXXX')
 parser.add_argument('T1filename', type=str, help='T1 filename')
 parser.add_argument('T2filename', type=str, help='T2 filename')
 parser.add_argument('--no_report', action='store_true')
@@ -20,8 +20,8 @@ parser.add_argument( '-sex', type=str, default='Unknown')
 parser.add_argument('-age', type=str, default='Unknown')
 args = parser.parse_args()
 
-nativeFLAIR_name='/data/native_flair_jobXXX.nii'
-nativeT1_name='/data/native_t1_jobXXX.nii'
+nativeFLAIR_name='/data/native_flair_'+args.index_name+'.nii'
+nativeT1_name='/data/native_t1_'+args.index_name+'.nii'
 
 if('.gz' in args.T2filename):
     shutil.copyfile(args.T2filename, nativeFLAIR_name+'.gz')
