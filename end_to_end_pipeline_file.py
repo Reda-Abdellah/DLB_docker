@@ -68,5 +68,5 @@ if(not args.no_report):
             to_mni_affine,crisp_filename+'.gz', hemi_fileneame+'.gz',structures_filename+'.gz', age, sex)
 os.remove(unfiltred_t1_filename)
 
-get_preview(mni_flair_name)
+get_preview(mni_flair_name+'.gz')
 #get_preview(mni_lesions_name)
