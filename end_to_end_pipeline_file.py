@@ -20,8 +20,8 @@ parser.add_argument( '-sex', type=str, default='Unknown')
 parser.add_argument('-age', type=str, default='Unknown')
 args = parser.parse_args()
 
-nativeFLAIR_name='/data/native__flair.nii'
-nativeT1_name='/data/native__t1.nii'
+nativeFLAIR_name='/data/native_flair_jobXXX.nii'
+nativeT1_name='/data/native_t1_jobXXX.nii'
 
 if('.gz' in args.T2filename):
     shutil.copyfile(args.T2filename, nativeFLAIR_name+'.gz')
@@ -67,3 +67,6 @@ if(not args.no_report):
     report(unfiltred_t1_filename, mni_T1_name+'.gz', mni_flair_name+'.gz', mni_mask_name+'.gz', mni_lesions_name+'.gz',
             to_mni_affine,crisp_filename+'.gz', hemi_fileneame+'.gz',structures_filename+'.gz', age, sex)
 os.remove(unfiltred_t1_filename)
+
+get_preview(mni_flair_name)
+#get_preview(mni_lesions_name)

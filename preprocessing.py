@@ -36,19 +36,8 @@ def preprocess_folder(in_folder_path,T1Keyword="T1",FLAIRKeyword='FLAIR'): #rece
 
 
 def preprocess_file(nativeT1_name, nativeFLAIR_name): #receives absolute path
-    print('processing: '+nativeT1_name+' and '+nativeFLAIR_name)
-    #copyfile(nativeT1_name,newT1)
-    #copyfile(nativeFLAIR_name,newFLAIR)
-    bin='./lesionBrain_v11_fullpreprocessing_exe'
-    command=bin+' '+nativeT1_name+' '+nativeFLAIR_name
-    os.system(command)
-
-    assert os.path.isfile(os.path.join(os.path.dirname(nativeT1_name), 'n_mfmni_f'+os.path.basename(nativeT1_name).replace('.nii', '_check.nii')))
-    assert os.path.isfile(os.path.join(os.path.dirname(nativeFLAIR_name), 'n_mfmni_f'+os.path.basename(nativeFLAIR_name).replace('.nii', '_check.nii')))
-
-    newT1=nativeT1_name.replace('native_','preprocessed_mni_')
-    newFLAIR=nativeFLAIR_name.replace('native_','preprocessed_mni_')
-
+    newT1=nativeT1_name.replace('native_','mni_')
+    newFLAIR=nativeFLAIR_name.replace('native_','mni_')
     outT1=nativeT1_name.replace('.nii','_check.nii')
     outT1=outT1.replace('native_','n_mfmni_fnative_')
     out_intot1=nativeFLAIR_name.replace('.nii','_checkAffine.txt')
@@ -60,12 +49,21 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name): #receives absolute path
     out_crisp_filename=outT1.replace('n_mfmni_','crisp_mfmni_')
     out_hemi_fileneame= outT1.replace('n_mfmni_','hemi_n_mfmni_')
     out_structures_filename = outT1.replace('n_mfmni_','lab_n_mfmni_')
-    new_crisp_filename=newT1.replace('preprocessed','crisp').replace('_t1','')
-    new_hemi_fileneame= newT1.replace('preprocessed','hemi').replace('_t1','')
-    new_structures_filename = newT1.replace('preprocessed','structure').replace('_t1','')
+    new_crisp_filename=newT1.replace('mni_t1_','mni_tissues_')
+    new_hemi_fileneame= newT1.replace('mni_t1_','mni_hemi_')
+    new_structures_filename = newT1.replace('mni_t1_','mni_structure_')
     new_mask=newT1.replace('t1','mask')
     new_intot1=nativeFLAIR_name.replace('native_','affine_intot1_fmni_').replace('.nii','.txt')
     new_affine=nativeT1_name.replace('native_','affine_mfmni_').replace('.nii','.txt')
+    
+    print('processing: '+nativeT1_name+' and '+nativeFLAIR_name)
+    bin='./lesionBrain_v11_fullpreprocessing_exe'
+    command=bin+' '+nativeT1_name+' '+nativeFLAIR_name
+    os.system(command)
+
+    assert os.path.isfile(os.path.join(os.path.dirname(nativeT1_name), 'n_mfmni_f'+os.path.basename(nativeT1_name).replace('.nii', '_check.nii')))
+    assert os.path.isfile(os.path.join(os.path.dirname(nativeFLAIR_name), 'n_mfmni_f'+os.path.basename(nativeFLAIR_name).replace('.nii', '_check.nii')))
+
     os.rename(outT1, newT1)
     os.rename(out_hemi_fileneame, new_hemi_fileneame)
     os.rename(out_crisp_filename, new_crisp_filename)

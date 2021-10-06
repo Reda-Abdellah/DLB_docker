@@ -19,6 +19,24 @@ from keras import backend as K
 import time
 import tensorflow as tf
 
+def get_preview(input_file):
+	nii.Nifti1Header.quaternion_threshold = -8e-07
+	# read test data
+	output_file = input_file.replace('.nii', '_preview.nii')			
+	# Save preview_mni_t1
+	T1_img = nii.load(input_file)
+	T1 = T1_img.get_fdata()
+	out_type = np.uint8
+	print("im: "+input_file+". min=", np.min(T1), "max=", np.max(T1))
+	T1 /= 300
+	T1_clipped = np.clip(T1, 0, 1)*np.iinfo(out_type).max
+	print("T1_clipped: min=", np.min(T1_clipped), "max=", np.max(T1_clipped))
+	T1_clipped = T1_clipped.astype(out_type)
+	array_img = nii.Nifti1Image(T1_clipped, T1_img.affine)
+	array_img.set_data_dtype(out_type)
+	print('saving...'+output_file)
+	array_img.to_filename(output_file)
+
 def normalize_image(vol, contrast):
 	# copied from FLEXCONN
 	# slightly changed to fit our implementation

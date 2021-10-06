@@ -1,5 +1,5 @@
 from report_utils import *
-
+from utils import get_preview
 
 def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_filename, LAB_filename,transform_filename,
             crisp_filename, hemi_fileneame,structures_filename, age='uknown', sex='uknown'):
@@ -64,18 +64,23 @@ def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_
 
     filenames_normal_tissue, normal_vol= get_expected_volumes(age, sex, vols_tissue, vol_ice)
 
-    save_pdf(input_t1_filename, age, sex, vols_tissue,vol_ice , snr, orientation_report, filenames_normal_tissue, normal_vol,
+    all_lesions= save_pdf(input_t1_filename, age, sex, vols_tissue,vol_ice , snr, orientation_report, filenames_normal_tissue, normal_vol,
     scale, colors_ice, colors_lesions,colors_tissue,lesion_types_filename, plot_images_filenames)
 
+    save_csv(input_t1_filename,  age, sex, all_lesions ,vol_ice, snr, scale)
+
 """
-report(unfiltred_t1_filename='to_segment/n_mfmni_ftraining01_01_mprage_pp_check.nii',
-input_t1_filename='to_segment/n_mfmni_ftraining01_01_mprage_pp_check.nii',
- input_flair_filename='to_segment/n_mfmni_ftraining01_01_flair_pp_check.nii',
-  MASK_filename='to_segment/mask_n_mfmni_ftraining01_01_mprage_pp_check.nii',
-   LAB_filename='to_segment/training01_01_mask1.nii',
-   transform_filename='to_segment/affine_mftraining01_01_mprage_pp_checkAffine.txt',
-    crisp_filename='to_segment/crisp_mfmni_ftraining01_01_mprage_pp_check.nii',
-     hemi_fileneame='to_segment/hemi_n_mfmni_ftraining01_01_mprage_pp_check.nii',
-     structures_filename='to_segment/lab_n_mfmni_ftraining01_01_mprage_pp_check.nii',
+report(unfiltred_t1_filename='/data/mni__unfiltred.nii',
+input_t1_filename='/data/mni__t1.nii.gz',
+ input_flair_filename='/data/mni__flair.nii.gz',
+  MASK_filename='/data/mni__mask.nii.gz',
+   LAB_filename='/data/mni_.nii.gz',
+   transform_filename='/data/affine_mfmni__t1.txt',
+    crisp_filename='/data/mni_tissues_.nii.gz',
+     hemi_fileneame='/data/mni_hemi_.nii.gz',
+     structures_filename='/data/mni_structure_.nii.gz',
       age='21', sex='female')
-"""
+
+get_preview('data/mni__flair.nii.gz')
+#get_preview('mni_.nii.gz')
+#"""
