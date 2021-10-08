@@ -1,5 +1,5 @@
-from keras.layers import Input, Conv3D , Dropout, concatenate,Concatenate, BatchNormalization,Conv3DTranspose, Add,MaxPooling3D, UpSampling3D,Flatten,Dense,Activation,SpatialDropout3D, Lambda,GlobalMaxPooling3D
-from keras.models import Model , load_model
+from keras.layers import Input, Conv3D, Dropout, concatenate, Concatenate, BatchNormalization, Conv3DTranspose, Add, MaxPooling3D, UpSampling3D, Flatten, Dense, Activation, SpatialDropout3D, Lambda, GlobalMaxPooling3D
+from keras.models import Model, load_model
 from keras.activations import softmax
 from keras import backend as K
 from keras import optimizers
@@ -13,16 +13,18 @@ from keras import initializers, regularizers
 from keras.utils import conv_utils
 import numpy as np
 
+
 def infer_spatial_rank(input_tensor):
     """
     e.g. given an input tensor [Batch, X, Y, Z, Feature] the spatial rank is 3
     """
     input_shape = input_tensor.shape
     input_shape.with_rank_at_least(3)
-    #dims = input_tensor.get_shape().ndims - 2
-    #assert dims > 0, "input tensor should have at least one spatial dim, " \
+    # dims = input_tensor.get_shape().ndims - 2
+    # assert dims > 0, "input tensor should have at least one spatial dim, " \
     #                 "in addition to batch and channel dims"
     return int(input_shape.ndims - 2)
+
 
 def expand_spatial_params(input_param, spatial_rank, param_type=int):
     """
@@ -53,6 +55,7 @@ def expand_spatial_params(input_param, spatial_rank, param_type=int):
         'param length should be at least have the length of spatial rank'
     return tuple(input_param[:spatial_rank])
 
+
 class LinearResizeLayer(Layer):
 	"""
 	Resize 2D/3D images using ``tf.image.resize_bilinear``
@@ -72,7 +75,7 @@ class LinearResizeLayer(Layer):
 		self.new_size = new_size
 
 	def compute_output_shape(self, input_shape):
-		return (input_shape[0],self.new_size[0],self.new_size[1],self.new_size[2],input_shape[4])
+		return (input_shape[0], self.new_size[0], self.new_size[1], self.new_size[2], input_shape[4])
 
 	def call(self, input_tensor):
 		"""
@@ -103,7 +106,7 @@ class LinearResizeLayer(Layer):
 		# resize y-z
 		squeeze_b_x = tf.reshape(input_tensor, [-1, y_size, z_size, c_size])
 		resize_b_x = tf.image.resize_bilinear(squeeze_b_x, [y_size_new, z_size_new])
-		resume_b_x = tf.reshape(resize_b_x,  [-1, x_size, y_size_new, z_size_new, c_size])
+		resume_b_x = tf.reshape(resize_b_x, [-1, x_size, y_size_new, z_size_new, c_size])
 
 		# resize x
 		#   first reorient
@@ -117,11 +120,13 @@ class LinearResizeLayer(Layer):
 		output_tensor = tf.transpose(resume_b_z, [0, 3, 2, 1, 4])
 		return output_tensor
 
+
 def to_list(x):
-    if type(x) not in [list, tuple]:
-        return [x]
-    else:
-        return list(x)
+	if type(x) not in [list, tuple]:
+		return [x]
+	else:
+		return list(x)
+
 
 class GroupNormalization(Layer):
     def __init__(self, axis=-1,
@@ -153,7 +158,7 @@ class GroupNormalization(Layer):
         elif self.data_format == 'channels_first':
             channel_axis = 1
             shape[channel_axis] = input_shape[channel_axis]
-        #for i in self.axis:
+        # for i in self.axis:
         #    shape[i] = input_shape[i]
         self.gamma = self.add_weight(shape=shape,
                                      initializer=self.gamma_init,
@@ -175,19 +180,18 @@ class GroupNormalization(Layer):
                     batch_size = -1
 
                 if c < self.group:
-                    raise ValueError('Input channels should be larger than group size' +
-                                     '; Received input channels: ' + str(c) +
-                                     '; Group size: ' + str(self.group)
-                                    )
+                    raise ValueError('Input channels should be larger than group size'
+                                     + '; Received input channels: ' + str(c)
+                                     + '; Group size: ' + str(self.group)
+                    )
 
-                x = K.reshape(inputs, (batch_size, h, w, l , self.group, c // self.group))
-                mean = K.mean(x, axis=[1, 2,3, 5], keepdims=True)
+                x = K.reshape(inputs, (batch_size, h, w, l, self.group, c // self.group))
+                mean = K.mean(x, axis=[1, 2, 3, 5], keepdims=True)
                 std = K.sqrt(K.var(x, axis=[1, 2, 3, 5], keepdims=True) + self.epsilon)
                 x = (x - mean) / std
 
-                x = K.reshape(x, (batch_size, h, w, l , c))
+                x = K.reshape(x, (batch_size, h, w, l, c))
                 return self.gamma * x + self.beta
-
 
     def get_config(self):
         config = {'epsilon': self.epsilon,
@@ -201,108 +205,105 @@ class GroupNormalization(Layer):
         base_config = super(GroupNormalization, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
-def load_UNET3D_SLANT27_v2_groupNorm(ps1,ps2,ps3,ch,nc=4,nf=24,drop=0.5,groups=8,final_act='softmax'):   #3 levels + linear upsampling
+
+def load_UNET3D_SLANT27_v2_groupNorm(ps1, ps2, ps3, ch, nc=4, nf=24, drop=0.5, groups=8, final_act='softmax'):  # 3 levels + linear upsampling
     # See https://arxiv.org/pdf/1806.00546.pdf
-    #nc: number of output classes
-    #nf: number of filter
-    #ch: number of channels
-    G=groups
+    # nc: number of output classes
+    # nf: number of filter
+    # ch: number of channels
+    G = groups
     # model UNET 3D
-    pool_size=[2,2,2]
+    pool_size = [2, 2, 2]
 
     input_img = Input(shape=(ps1, ps2, ps3, ch))     # adapt this if using `channels_first` image data format
 
     conv1 = Conv3D(nf, (3, 3, 3), activation='relu', padding='same')(input_img)
     conv1 = GroupNormalization(group=G)(conv1)
-    #conv1 = WeightNorm(conv1)
+    # conv1 = WeightNorm(conv1)
     conv1 = Conv3D(nf*2, (3, 3, 3), activation='relu', padding='same')(conv1)
-    #conv1 = BatchNormalization()(conv1)
-    #conv1 = Conv3D(nf, (3, 3, 3), activation='relu', padding='same')(conv1)
+    # conv1 = BatchNormalization()(conv1)
+    # conv1 = Conv3D(nf, (3, 3, 3), activation='relu', padding='same')(conv1)
     pool1 = MaxPooling3D(pool_size=pool_size)(conv1)
-    if(drop>0):
+    if(drop > 0):
         pool1 = Dropout(drop)(pool1)
 
     conv2 = GroupNormalization(group=G)(pool1)
-    #conv2 = WeightNorm(pool1)
+    # conv2 = WeightNorm(pool1)
     conv2 = Conv3D(nf*2, (3, 3, 3), activation='relu', padding='same')(conv2)
     conv2 = GroupNormalization(group=G)(conv2)
-    #conv2 = WeightNorm(conv2)
+    # conv2 = WeightNorm(conv2)
 
     conv2 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(conv2)
-    #conv2 = BatchNormalization()(conv2)
-    #conv2 = Conv3D(nf*2, (3, 3, 3), activation='relu', padding='same')(conv2)
+    # conv2 = BatchNormalization()(conv2)
+    # conv2 = Conv3D(nf*2, (3, 3, 3), activation='relu', padding='same')(conv2)
     pool2 = MaxPooling3D(pool_size=pool_size)(conv2)
-    if(drop>0):
+    if(drop > 0):
         pool2 = Dropout(drop)(pool2)
 
     conv3 = GroupNormalization(group=G)(pool2)
-    #conv3 = WeightNorm(pool2)
+    # conv3 = WeightNorm(pool2)
 
     conv3 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(conv3)
     conv3 = GroupNormalization(group=G)(conv3)
-    #conv3 = WeightNorm(conv3)
+    # conv3 = WeightNorm(conv3)
 
     conv3 = Conv3D(nf*8, (3, 3, 3), activation='relu', padding='same')(conv3)
-    #conv3 = BatchNormalization()(conv3)
-    #conv3 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(conv3)
+    # conv3 = BatchNormalization()(conv3)
+    # conv3 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(conv3)
     pool3 = MaxPooling3D(pool_size=pool_size)(conv3)
-    if(drop>0):
-            pool3 = Dropout(drop)(pool3)
+    if(drop > 0):
+        pool3 = Dropout(drop)(pool3)
 
     conv4 = GroupNormalization(group=G)(pool3)
-    #conv4 = WeightNorm(pool3)
+    # conv4 = WeightNorm(pool3)
 
-    conv4 = Conv3D(nf*16, (3, 3, 3), activation='relu', name='bottleneck' ,padding='same')(conv4) #,
-    #conv4 = BatchNormalization()(conv4)
-    #conv4 = Conv3D(nf*8, (3, 3, 3), activation='relu', padding='same')(conv4)
-    #conv4 = BatchNormalization()(conv4)
-    #conv4 = Conv3D(nf*8, (3, 3, 3), activation='relu', padding='same')(conv4)
+    conv4 = Conv3D(nf*16, (3, 3, 3), activation='relu', name='bottleneck', padding='same')(conv4)
+    # conv4 = BatchNormalization()(conv4)
+    # conv4 = Conv3D(nf*8, (3, 3, 3), activation='relu', padding='same')(conv4)
+    # conv4 = BatchNormalization()(conv4)
+    # conv4 = Conv3D(nf*8, (3, 3, 3), activation='relu', padding='same')(conv4)
 
-
-    #up5 = UpSampling3D()(conv4)
+    # up5 = UpSampling3D()(conv4)
     new_shape = conv3.shape.as_list()[1:-1]
-    up5  = LinearResizeLayer(new_shape,name='up5')(conv4)
+    up5 = LinearResizeLayer(new_shape, name='up5')(conv4)
 
-    up5 = concatenate([up5, conv3], axis=4) # up5 = 512 + conv3 = 256
+    up5 = concatenate([up5, conv3], axis=4)  # up5 = 512 + conv3 = 256
     up5 = GroupNormalization(group=G)(up5)
-    #up5 = WeightNorm(up5)
+    # up5 = WeightNorm(up5)
 
     conv5 = Conv3D(nf*8, (3, 3, 3), activation='relu', padding='same')(up5)
-    #conv5 = BatchNormalization()(conv5)
-    #conv5 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(conv5)
-    #conv5 = BatchNormalization()(conv5)
-    #conv5 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(conv5)
+    # conv5 = BatchNormalization()(conv5)
+    # conv5 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(conv5)
+    # conv5 = BatchNormalization()(conv5)
+    # conv5 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(conv5)
 
-
-    #up6 = UpSampling3D()(conv5)
+    # up6 = UpSampling3D()(conv5)
     new_shape = conv2.shape.as_list()[1:-1]
-    up6  = LinearResizeLayer(new_shape,name='up6')(conv5)
+    up6 = LinearResizeLayer(new_shape, name='up6')(conv5)
 
-    up6 = concatenate([up6, conv2], axis=4) # up6 = 256 + conv2 = 128
+    up6 = concatenate([up6, conv2], axis=4)  # up6 = 256 + conv2 = 128
     up6 = GroupNormalization(group=G)(up6)
-    #up6 = WeightNorm(up6)
+    # up6 = WeightNorm(up6)
 
     conv6 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(up6)
-    #conv6 = BatchNormalization()(conv6)
-    #conv6 = Conv3D(nf*2, (3, 3, 3), activation='relu', padding='same')(conv6)
-    #conv6 = BatchNormalization()(conv6)
-    #conv6 = Conv3D(nf*2, (3, 3, 3), activation='relu', padding='same')(conv6)
+    # conv6 = BatchNormalization()(conv6)
+    # conv6 = Conv3D(nf*2, (3, 3, 3), activation='relu', padding='same')(conv6)
+    # conv6 = BatchNormalization()(conv6)
+    # conv6 = Conv3D(nf*2, (3, 3, 3), activation='relu', padding='same')(conv6)
 
-
-    #up7 = UpSampling3D()(conv6)
+    # up7 = UpSampling3D()(conv6)
     new_shape = conv1.shape.as_list()[1:-1]
-    up7   = LinearResizeLayer(new_shape,name='up7')(conv6)
+    up7 = LinearResizeLayer(new_shape, name='up7')(conv6)
 
-    up7 = concatenate([up7, conv1], axis=4) # up7 = 128 + conv1 = 64
+    up7 = concatenate([up7, conv1], axis=4)  # up7 = 128 + conv1 = 64
     up7 = GroupNormalization(group=G)(up7)
-    #up7 = WeightNorm(up7)
+    # up7 = WeightNorm(up7)
 
     conv7 = Conv3D(nf*4, (3, 3, 3), activation='relu', padding='same')(up7)
-    #conv7 = BatchNormalization()(conv7)
-    #conv7 = Conv3D(nf, (3, 3, 3), activation='relu', padding='same')(conv7)
-    #conv7 = BatchNormalization()(conv7)
-    #conv7 = Conv3D(nf, (3, 3, 3), activation='relu', padding='same')(conv7)
-
+    # conv7 = BatchNormalization()(conv7)
+    # conv7 = Conv3D(nf, (3, 3, 3), activation='relu', padding='same')(conv7)
+    # conv7 = BatchNormalization()(conv7)
+    # conv7 = Conv3D(nf, (3, 3, 3), activation='relu', padding='same')(conv7)
 
     output = Conv3D(nc, (3, 3, 3), activation=final_act, padding='same')(conv7)
 

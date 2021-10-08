@@ -31,23 +31,28 @@ RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted u
 RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse  >> /etc/apt/sources.list
 RUN apt-get update
 RUN apt -qqy install libx11-dev xserver-xorg libfontconfig1 libxt6 libxcomposite1 libasound2 libxext6 texlive-xetex
-RUN apt -qqy install wget
-RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1FkcruF4AeJjgmcVpfKQgbrMXOvG2bO7D' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1FkcruF4AeJjgmcVpfKQgbrMXOvG2bO7D" -O Compilation_lesionBrain_v10.zip && rm -rf /tmp/cookies.txt
-RUN unzip Compilation_lesionBrain_v10.zip
-RUN mv Compilation_lesionBrain_v11_fullpreprocessing/* /opt/deeplesionbrain
-RUN pip3 install scikit-learn statsmodels  keras==2.2.4 pillow nibabel==2.5.2 scikit-image==0.17.2
+
+#RUN apt -qqy install wget
+#RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1FkcruF4AeJjgmcVpfKQgbrMXOvG2bO7D' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1FkcruF4AeJjgmcVpfKQgbrMXOvG2bO7D" -O Compilation_lesionBrain_v10.zip && rm -rf /tmp/cookies.txt
+#RUN unzip Compilation_lesionBrain_v10.zip
+#RUN mv Compilation_lesionBrain_v11_fullpreprocessing/* /opt/deeplesionbrain
+COPY MATLAB/Compilation_lesionBrain_v11_fullpreprocessing/ /opt/deeplesionbrain/
+
+RUN pip3 install statsmodels  keras==2.2.4 pillow nibabel==2.5.2 scikit-image==0.17.2
 RUN mkdir /Weights
-RUN echo "download weights"
-RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1yr_hiYb7_kJLo5WVOaPckxRICvN9YzU9' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1yr_hiYb7_kJLo5WVOaPckxRICvN9YzU9" -O trained_all_second_step_iqda.zip && rm -rf /tmp/cookies.txt
-RUN unzip trained_all_second_step_iqda.zip
-RUN mv trained_all_second_step_iqda/* /Weights/
-RUN rm -f trained_all_second_step_iqda.zip
-RUN rm -f Compilation_lesionBrain_v10.zip
+#RUN echo "download weights"
+#RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1yr_hiYb7_kJLo5WVOaPckxRICvN9YzU9' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1yr_hiYb7_kJLo5WVOaPckxRICvN9YzU9" -O trained_all_second_step_iqda.zip && rm -rf /tmp/cookies.txt
+#RUN unzip trained_all_second_step_iqda.zip
+#RUN mv trained_all_second_step_iqda/* /Weights/
+#RUN rm -f trained_all_second_step_iqda.zip
+#RUN rm -f Compilation_lesionBrain_v10.zip
+COPY trained_all_second_step_iqda/ /Weights/
+
 RUN apt -qqy install git
 RUN chmod 777 -R /opt/deeplesionbrain/*
 #RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
 #RUN mv DLB_docker/* /opt/deeplesionbrain
-COPY * /opt/deeplesionbrain/
+COPY *.py *.png *.pkl *.md /opt/deeplesionbrain/
 RUN mkdir /data/
 RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/libmwcoder_types.so* /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude/
 RUN apt -qqy install libatk1.0-0
