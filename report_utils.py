@@ -354,7 +354,7 @@ def write_lesions(out, lesion_types_filename, scale, WM_vol):
             out.write(Template('\\vspace*{10pt}\n').safe_substitute())
         all_lesions.append(all_lesions_type)
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{10pt}\n').safe_substitute())
+    # out.write(Template('\\vspace*{10pt}\n').safe_substitute())
     return all_lesions
 
 
@@ -379,8 +379,6 @@ def write_lesion_table(out, lesion_types_filename, colors_lesions, scale):
     out.write(Template(row_color+'\\hspace*{5pt} Total Lesions & $g & $a & $d\\\\ \n').safe_substitute(g=seg_num_tot, a="{:5.2f}".format(vol_tot), d="{:5.2f}".format(vol_tot*100/vol_tot)))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{10pt}\n').safe_substitute())
-    out.write(Template('\\pagebreak\n').safe_substitute())
 
 
 def load_latex_packages(out):
@@ -439,7 +437,7 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
     n = "Intracranial Cavity (IC)"
     v = vol_ice
     p = 100*v/vol_ice
-    out.write(Template('$cb $n & $v & $p\\% \\\\\n').safe_substitute(n=n, cb=cb, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
+    out.write(Template('$cb $n & $v & $p \\\\\n').safe_substitute(n=n, cb=cb, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
     for i in range(len(tissues_names)):
         row_color = getRowColor(i)
         cb = get_color_string(colors_tissue[i+1])
@@ -447,9 +445,9 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
         v = vols_tissue[i]
         p = 100*v/vol_ice
         if(len(normal_vol) == 0):
-            out.write(Template(row_color+'$cb $n & $v & $p\\% \\\\\n').safe_substitute(cb=cb, n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
+            out.write(Template(row_color+'$cb $n & $v & $p \\\\\n').safe_substitute(cb=cb, n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
         else:
-            out.write(Template(row_color+'$cb $n & $v & $p\\% [$a - $b] \\\\\n').safe_substitute(cb=cb, n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), a="{:5.2f}".format(normal_vol[i][0]), b="{:5.2f}".format(normal_vol[i][1])))
+            out.write(Template(row_color+'$cb $n & $v & $p [$a - $b] \\\\\n').safe_substitute(cb=cb, n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), a="{:5.2f}".format(normal_vol[i][0]), b="{:5.2f}".format(normal_vol[i][1])))
 
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
@@ -469,7 +467,7 @@ def plot_img(out, plot_images_filenames):
         out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\\pagebreak\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{30pt}\n').safe_substitute())
+    # out.write(Template('\\vspace*{30pt}\n').safe_substitute())
 
 
 def get_tissue_plot(out, filenames_normal_tissue):
@@ -481,6 +479,18 @@ def get_tissue_plot(out, filenames_normal_tissue):
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\vspace*{30pt}\n').safe_substitute())
+
+
+def write_footnotes(out, display_bounds=False):
+        out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
+        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the volumes are presented in absolute value (measured in $mm^{3}$) and in relative value (measured in relation to the IC volume).}\\\\*\n').safe_substitute())
+        if(display_bounds):
+            out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Values between brackets show expected limits (95\%) of normalized volume in function of sex and age for each measure for reference purpose.}\\\\*\n').safe_substitute())
+        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Position provides the $x$, $y$ and $z$ coordinates of the lesion center of mass.}\\\\*\n').safe_substitute())
+        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Lesion burden is calculated as the lesion volume divided by the white matter volume.}\\\\*\n').safe_substitute())
+        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the result images are located in the MNI space (neurological orientation).}\\\\\*\n').safe_substitute())
+        # out.write(Template('\\textcolor{blue}{\\footnotesize \\itshape *Result images located in the MNI space (neurological orientation).}\\\\*\n').safe_substitute())
+        out.write(Template('\\end{tabularx}\n').safe_substitute())
 
 
 def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_report, filenames_normal_tissue, normal_vol,
@@ -539,6 +549,17 @@ def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_rep
         print('Lesion tables....')
         write_lesion_table(out, lesion_types_filename, colors_lesions, scale)
 
+        out.write(Template('\\vspace*{50pt}\n').safe_substitute())
+
+        # Footnotes
+        write_footnotes(out, display_bounds=(len(normal_vol) > 0))
+        out.write(Template('\n').safe_substitute())
+
+        out.write(Template('\\vspace*{5pt}\n').safe_substitute())
+        out.write(Template('\n').safe_substitute())
+
+        out.write(Template('\\pagebreak\n').safe_substitute())
+
         # plot images
         print('plot images....')
         plot_img(out, plot_images_filenames)
@@ -547,17 +568,6 @@ def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_rep
         print('Lesion type tables....')
         all_lesions = write_lesions(out, lesion_types_filename, scale, vols_tissue[2])
 
-        # Footnotes
-        out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
-        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the volumes are presented in absolute value (measured in $mm^{3}$) and in relative value (measured in relation to the IC volume).}\\\\*\n').safe_substitute())
-        if(len(normal_vol) > 0):
-            out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Values between brackets show expected limits (95\%) of normalized volume in function of sex and age for each measure for reference purpose.}\\\\*\n').safe_substitute())
-        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Position provides the $x$, $y$ and $z$ coordinates of the lesion center of mass.}\\\\*\n').safe_substitute())
-        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Lesion burden is calculated as the lesion volume divided by the white matter volume.}\\\\*\n').safe_substitute())
-        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the result images are located in the MNI space (neurological orientation).}\\\\\*\n').safe_substitute())
-        # out.write(Template('\\textcolor{blue}{\\footnotesize \\itshape *Result images located in the MNI space (neurological orientation).}\\\\*\n').safe_substitute())
-        out.write(Template('\\end{tabularx}\n').safe_substitute())
-        
         out.write(Template('\\end{center}\n').safe_substitute())
         out.write(Template('\\end{document}\n').safe_substitute())
         out.close()
@@ -580,7 +590,8 @@ def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_rep
 
 def save_csv(input_file, age, gender, all_lesions, vol_ice, snr, scale):
     basename = os.path.basename(input_file).replace("mni_", "").replace("t1_", "").replace(".nii.gz", "")
-    output_csv_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".csv").replace("mni", "report")
+    # output_csv_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".csv").replace("mni", "report")
+    output_csv_filename = os.path.join(os.path.dirname(input_file), os.path.basename(input_file).replace("mni_t1_", "report_").replace(".nii.gz", ".csv").replace(".nii", ".csv"))
     first_row = ['Patient ID', 'Sex', 'Age', 'Report Date', 'Scale factor', 'SNR',  # 'mSNR',
     	         'ICV cm3',
                  'Total lesion count', 'Total lesion volume (absolute) cm3', 'Total lesion volume (normalized) %', 'Total lesion burden',

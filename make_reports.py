@@ -36,7 +36,7 @@ def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_
     DEFAULT_ALPHA = 0.5
     colors_lesions = np.array([[0, 0, 0], [255, 255, 0], [0, 255, 255], [255, 0, 255], [88, 41, 0], [249, 228, 183]])
     colors_tissue = np.array([[0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255]])
-    colors_ice = np.array([[0, 0, 0], [255, 165, 0]])
+    colors_ice = np.array([[0, 0, 0], [255, 0, 0]])
 
     lesion_types = nii.load(lesion_types_filename).get_data()
 
