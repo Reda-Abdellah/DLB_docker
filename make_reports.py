@@ -66,3 +66,15 @@ def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_
                            scale, colors_ice, colors_lesions, colors_tissue, lesion_types_filename, plot_images_filenames)
 
     save_csv(input_t1_filename, age, sex, all_lesions, vol_ice, snr, scale)
+
+
+"""
+report(unfiltred_t1_filename='/data/mni_t1_jobXXX.nii.gz',
+input_t1_filename='/data/mni_t1_jobXXX.nii.gz',
+ input_flair_filename='/data/mni_flair_jobXXX.nii.gz',
+  MASK_filename='/data/mni_mask_jobXXX.nii.gz',
+   lesion_types_filename='/data/mni_lesions_jobXXX.nii.gz',
+   transform_filename='/data/affine_mfmni_t1_jobXXX.txt',
+    crisp_filename='/data/mni_tissues_jobXXX.nii.gz',
+      age='21', sex='female')
+"""
