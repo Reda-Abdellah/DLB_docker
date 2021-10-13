@@ -1,7 +1,7 @@
 FROM nvcr.io/nvidia/tensorflow:21.08-tf1-py3
 #FROM tensorflow/tensorflow:1.15.4-gpu-py3
 LABEL name=deeplesionbrain \
-      version=0.1 \
+      version=1.0 \
       maintainer=reda-abdellah.kamraoui@labri.fr \
       net.volbrain.pipeline.mode=gpu_only \
       net.volbrain.pipeline.name=assemblyNet
@@ -52,7 +52,7 @@ RUN apt -qqy install git
 RUN chmod 777 -R /opt/deeplesionbrain/*
 #RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
 #RUN mv DLB_docker/* /opt/deeplesionbrain
-COPY *.py *.png *.pkl *.md /opt/deeplesionbrain/
+COPY *.py *.png *.pkl *.md README.pdf /opt/deeplesionbrain/
 RUN mkdir /data/
 RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/libmwcoder_types.so* /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude/
 RUN apt -qqy install libatk1.0-0
