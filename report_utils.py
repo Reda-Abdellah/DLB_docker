@@ -173,8 +173,11 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         sex = 'female'
     if(sex == 'm' or sex == 'homme' or sex == 'man'):
         sex = 'male'
+
     structure = ['White matter', 'Grey matter', 'Cerebrospinal fluid']
     filenames = ['WM.png', 'GM.png', 'CSF.png']
+    tissue_vol_indices = [2, 1, 0]  # in tissue_vol, order is CSF, GM, WM
+    
     dataset = load_obj('normal_crisp_volume_by_age')
     normal_vol = []
     for i in range(3):
@@ -191,7 +194,7 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         plt.xlabel('age (years)')
         plt.ylabel('volume (%)')
         if(not age == 'unknown'):
-            plt.scatter([int(age)], [int(100*tissue_vol[i]/vol_ice)], s=300, c='red')
+            plt.scatter([int(age)], [int(100*tissue_vol[tissue_vol_indices[i]]/vol_ice)], s=300, c='red')
             normal_vol.append([y2[int(age)], y1[int(age)]])
         plt.savefig(filenames[i], dpi=300, bbox_inches = 'tight', pad_inches=0.1)
         plt.clf()
@@ -389,8 +392,11 @@ def get_image_info(out, orientation_report, scale, snr):
 def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol):
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c}\n').safe_substitute())
     out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Tissues Segmentation}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}}  \\\\\n').safe_substitute())
-    vols_tissues_names = np.array(['healthy tissue', 'Lesions'])
-    tissues_names = np.array(['Cerebrospinal fluid', 'Grey matter', 'White matter (including lesions)'])
+
+    tissues_names = np.array(['White matter (including lesions)', 'Grey matter', 'Cerebrospinal fluid'])
+    tissue_vol_indices = [2, 1, 0]  # in tissue_vol, order is CSF, GM, WM
+    normal_vol_indices = [0, 1, 2]  # in normal_vol, order is WM, GM, CSF
+    
     n = "Intracranial Cavity (IC)"
     v = vol_ice
     p = 100*v/vol_ice
@@ -398,12 +404,12 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
     for i in range(len(tissues_names)):
         row_color = getRowColor(i+1)
         n = tissues_names[i]
-        v = vols_tissue[i]
+        v = vols_tissue[tissue_vol_indices[i]]
         p = 100*v/vol_ice
         if(len(normal_vol) == 0):
             out.write(Template(row_color+'$n & $v & $p \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
         else:
-            out.write(Template(row_color+'$n & $v & $p [$a - $b] \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), a="{:5.2f}".format(normal_vol[i][0]), b="{:5.2f}".format(normal_vol[i][1])))
+            out.write(Template(row_color+'$n & $v & $p [$a - $b] \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), a="{:5.2f}".format(normal_vol[normal_vol_indices[i]][0]), b="{:5.2f}".format(normal_vol[normal_vol_indices[i]][1])))
 
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
