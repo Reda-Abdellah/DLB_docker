@@ -1,5 +1,5 @@
 import os
-import sys
+# import sys
 import datetime
 import csv
 import numpy as np
@@ -13,6 +13,7 @@ from skimage.measure import label
 from matplotlib import pyplot as plt
 import numpy as np
 import pickle
+from utils import run_command
 
 OUT_HEIGHT = 217
 DEFAULT_ALPHA = 0.5
@@ -153,48 +154,17 @@ def compute_volumes(im, labels, scale):
     return vols
 
 
-def readITKtransform(transform_file):
-    '''
-    '''
-
-    # read the transform
-    transform = None
-    with open(transform_file, 'r') as f:
-        for line in f:
-
-            # check for Parameters:
-            if line.startswith('Parameters:'):
-                values = line.split(': ')[1].split(' ')
-
-                # filter empty spaces and line breaks
-                values = [float(e) for e in values if (e != '' and e != '\n')]
-                # create the upper left of the matrix
-                transform_upper_left = np.reshape(values[0:9], (3, 3))
-                # grab the translation as well
-                translation = values[9:]
-
-            # check for FixedParameters:
-            if line.startswith('FixedParameters:'):
-                values = line.split(': ')[1].split(' ')
-
-                # filter empty spaces and line breaks
-                values = [float(e) for e in values if (e != '' and e != '\n')]
-                # setup the center
-                center = values
-
-    # compute the offset
-    offset = np.ones(4)
-    for i in range(0, 3):
-        offset[i] = translation[i] + center[i]
-        for j in range(0, 3):
-            offset[i] -= transform_upper_left[i][j] * center[i]
-
-    # add the [0, 0, 0] line
-    transform = np.vstack((transform_upper_left, [0, 0, 0]))
-    # and the [offset, 1] column
-    transform = np.hstack((transform, np.reshape(offset, (4, 1))))
-
-    return transform
+def read_info_file(information_filename):
+    with open(information_filename, 'r') as f:
+        list_file = f.readlines()
+        assert(len(list_file)==2)
+        assert(list_file[0]=="my_snr_1,my_snr_2,scalet1,orientation_report\n")
+        list2 = list_file[1].split(",")
+        assert(len(list2) == 4)
+        snr = float(list2[0])
+        scale = float(list2[2])
+        orientation_report = capitalize(list2[3])
+        return snr, scale, orientation_report
 
 
 def get_expected_volumes(age, sex, tissue_vol, vol_ice):
@@ -224,15 +194,6 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         plt.savefig(filenames[i], dpi=300)
         plt.clf()
     return filenames, normal_vol
-
-
-def compute_SNR(ima, fima):
-    assert(ima.shape == fima.shape)
-    res = ima - fima
-    level = filters.threshold_otsu(fima)
-    ind = np.where(fima > level)
-    noise = np.std(res[ind])
-    return noise
 
 
 def save_seg_nii(img, affine, input_filename, prefix):
@@ -311,10 +272,6 @@ def get_patient_id(input_file):
     return idStr
 
 
-def get_color_string(color):
-    return Template('\\mycbox{{rgb,255:red,$r;green,$g;blue,$b}}').safe_substitute(r=color[0], g=color[1], b=color[2])
-
-
 def getRowColor(i):
     if (i % 2 == 0):
         return "\\rowcolor{white}"
@@ -368,15 +325,13 @@ def write_lesion_table(out, lesion_types_filename, colors_lesions, scale):
     seg_labels, seg_num_tot = label(lesion_type, return_num=True, connectivity=2)
     vol_tot = (compute_volumes(lesion_type, [[1]], scale))[0]
 
+    out.write(Template(getRowColor(0)+'Total Lesions & $g & $a & $d\\\\ \n').safe_substitute(g=seg_num_tot, a="{:5.2f}".format(vol_tot), d="{:5.2f}".format(vol_tot*100/vol_tot)))
     for i in range(1, 6):
-        row_color = getRowColor(i-1)
-        cb = get_color_string(colors_lesions[i])
+        row_color = getRowColor(i)
         lesion_type = (lesion_mask == i).astype('int')
         seg_labels, seg_num = label(lesion_type, return_num=True, connectivity=2)
         vol = (compute_volumes(lesion_type, [[1]], scale))[0]
-        out.write(Template(row_color+'$cb  $p & $g & $a & $d\\\\ \n').safe_substitute(cb=cb, p=types[i], g=seg_num, a="{:5.2f}".format(vol), d="{:5.2f}".format(vol*100/vol_tot)))
-    row_color = getRowColor(6-1)
-    out.write(Template(row_color+'\\hspace*{5pt} Total Lesions & $g & $a & $d\\\\ \n').safe_substitute(g=seg_num_tot, a="{:5.2f}".format(vol_tot), d="{:5.2f}".format(vol_tot*100/vol_tot)))
+        out.write(Template(row_color+'$p & $g & $a & $d\\\\ \n').safe_substitute(p=types[i], g=seg_num, a="{:5.2f}".format(vol), d="{:5.2f}".format(vol*100/vol_tot)))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
 
@@ -433,21 +388,19 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
     out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Tissues Segmentation}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($mm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}}  \\\\\n').safe_substitute())
     vols_tissues_names = np.array(['healthy tissue', 'Lesions'])
     tissues_names = np.array(['Cerebrospinal fluid', 'Grey matter', 'White matter (including lesions)'])
-    cb = get_color_string(colors_ice[1])
     n = "Intracranial Cavity (IC)"
     v = vol_ice
     p = 100*v/vol_ice
-    out.write(Template('$cb $n & $v & $p \\\\\n').safe_substitute(n=n, cb=cb, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
+    out.write(Template(getRowColor(0)+'$n & $v & $p \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
     for i in range(len(tissues_names)):
-        row_color = getRowColor(i)
-        cb = get_color_string(colors_tissue[i+1])
+        row_color = getRowColor(i+1)
         n = tissues_names[i]
         v = vols_tissue[i]
         p = 100*v/vol_ice
         if(len(normal_vol) == 0):
-            out.write(Template(row_color+'$cb $n & $v & $p \\\\\n').safe_substitute(cb=cb, n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
+            out.write(Template(row_color+'$n & $v & $p \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p)))
         else:
-            out.write(Template(row_color+'$cb $n & $v & $p [$a - $b] \\\\\n').safe_substitute(cb=cb, n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), a="{:5.2f}".format(normal_vol[i][0]), b="{:5.2f}".format(normal_vol[i][1])))
+            out.write(Template(row_color+'$n & $v & $p [$a - $b] \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), a="{:5.2f}".format(normal_vol[i][0]), b="{:5.2f}".format(normal_vol[i][1])))
 
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
@@ -457,7 +410,7 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
 
 
 def plot_img(out, plot_images_filenames):
-    titles = ['FLAIR', 'Intracranial cavity', 'Tissues', 'Lesions']
+    titles = ['FLAIR', 'Intracranial cavity segmentation', 'Tissues segmentation', 'Lesions segmentation']
     for i in [1, 2, 0, 3]:
         out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
         out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$v}} \\\\\n').safe_substitute(v=titles[i]))
@@ -504,7 +457,6 @@ def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_rep
     with open(output_tex_filename, 'w', newline='') as out:
         load_latex_packages(out)
         out.write(Template('\\pagestyle{plain}\n').safe_substitute())        
-        out.write(Template('\\newcommand{\\mycbox}[1]{\\tikz{\\path[fill=#1] (0.2,0.2) rectangle (0.4,0.4);}}\n').safe_substitute())
         out.write(Template('\n').safe_substitute())
         out.write(Template('\\definecolor{volbrain_blue}{RGB}{40,70,96}\n').safe_substitute())
         out.write(Template('\\definecolor{volbrain_clear_blue}{RGB}{161,185,205}\n').safe_substitute())
@@ -579,12 +531,13 @@ def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_rep
         # command = "xelatex -interaction=nonstopmode -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
         command = "xelatex -interaction=batchmode -halt-on-error -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
         print(command)
-        os.system(command)
+        run_command(command)
 
-        # os.remove(output_tex_filename)  # DEBUG BORIS !!!!!!!!!!!!
+        os.remove(output_tex_filename)
         os.remove(output_tex_filename.replace('tex', 'log'))
         os.remove(output_tex_filename.replace('tex', 'aux'))
         os.remove(output_tex_filename.replace('tex', 'out'))
+
         return all_lesions
 
 
@@ -632,11 +585,14 @@ def save_csv(input_file, age, gender, all_lesions, vol_ice, snr, scale):
         csv_writer.writerow(row)
 
 
-def save_images(suffixe, slice_index, FLAIR_slice, CRISP_slice,
-                LAB_slice, MASK_slice, colors_ice,
+def save_images(suffixe,
+                T1_slice, FLAIR_slice, CRISP_slice,
+                LAB_slice, MASK_slice,
+                colors_ice,
                 colors_lesions, colors_tissue,
                 out_height=OUT_HEIGHT, alpha=DEFAULT_ALPHA):
 
+    T1_slice = np.rot90(T1_slice)
     FLAIR_slice = np.rot90(FLAIR_slice)
     LAB_slice = np.rot90(LAB_slice)
     MASK_slice = np.rot90(MASK_slice)
@@ -652,12 +608,12 @@ def save_images(suffixe, slice_index, FLAIR_slice, CRISP_slice,
     filename_flair = "flair_{}.png".format(suffixe)
     Image.fromarray(out_im, 'RGB').save(filename_flair)
 
-    out_im = make_slice_with_seg_image_with_alpha_blending(FLAIR_slice, MASK_slice, alpha=alpha, colors=colors_ice)
+    out_im = make_slice_with_seg_image_with_alpha_blending(T1_slice, MASK_slice, alpha=alpha, colors=colors_ice)
     out_im = make_centered(out_im, out_height, out_height)
     filename_ice = "ice_{}.png".format(suffixe)
     Image.fromarray(out_im, 'RGB').save(filename_ice)
 
-    out_im = make_slice_with_seg_image_with_alpha_blending(FLAIR_slice, CRISP_slice, alpha=alpha, colors=colors_tissue)
+    out_im = make_slice_with_seg_image_with_alpha_blending(T1_slice, CRISP_slice, alpha=alpha, colors=colors_tissue)
     out_im = make_centered(out_im, out_height, out_height)
     filename_tissue = "tissue_{}.png".format(suffixe)
     Image.fromarray(out_im, 'RGB').save(filename_tissue)
