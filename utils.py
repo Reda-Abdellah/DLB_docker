@@ -1,24 +1,23 @@
-from sklearn.datasets import load_digits
+# from sklearn.datasets import load_digits
 import os
-import random
+# import random
 import glob
 import numpy as np
 import nibabel as nii
 import math
 import operator
-from scipy.ndimage.interpolation import zoom
-from keras.models import load_model
-from scipy import ndimage
-import scipy.io as sio
+# from scipy.ndimage.interpolation import zoom
+# from keras.models import load_model
+# from scipy import ndimage
+# import scipy.io as sio
 # import modelos
 import statsmodels.api as sm
 from scipy.signal import argrelextrema
-from collections import OrderedDict, defaultdict
+# from collections import OrderedDict, defaultdict
 # from skimage import measure
-from scipy.stats import pearsonr
-from keras import backend as K
+# from scipy.stats import pearsonr
 import time
-import tensorflow as tf
+import subprocess
 
 
 def save_flair_preview(input_file):
@@ -29,14 +28,14 @@ def save_flair_preview(input_file):
 	T1_img = nii.load(input_file)
 	T1 = T1_img.get_fdata()
 	out_type = np.uint8
-	print("im: "+input_file+". min=", np.min(T1), "max=", np.max(T1))
+	# print("im: "+input_file+". min=", np.min(T1), "max=", np.max(T1))
 	T1 /= 300
 	T1_clipped = np.clip(T1, 0, 1)*np.iinfo(out_type).max
-	print("T1_clipped: min=", np.min(T1_clipped), "max=", np.max(T1_clipped))
+	# print("T1_clipped: min=", np.min(T1_clipped), "max=", np.max(T1_clipped))
 	T1_clipped = T1_clipped.astype(out_type)
 	array_img = nii.Nifti1Image(T1_clipped, T1_img.affine)
 	array_img.set_data_dtype(out_type)
-	print('saving...' + output_file)
+	# print('saving...' + output_file)
 	array_img.to_filename(output_file)
 
 
@@ -268,3 +267,11 @@ def seg_majvote(T1, FLAIR, model, nbNN=[5, 5, 5], ps=[96, 96, 96], multi_out=Fal
 	SEG_mask = SEG*MASK
 
 	return SEG_mask
+
+
+def run_command(cmd):
+        # run command
+        # capture stdout & stderr, and redirect stderr to stdout
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, text=True)
+        if (result.stdout != ''):
+                print(result.stdout)
