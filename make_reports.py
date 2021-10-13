@@ -1,34 +1,30 @@
 from report_utils import *
 
 
-def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_filename, transform_filename,
+def report(input_t1_filename, input_flair_filename, MASK_filename, transform_filename,
            crisp_filename, lesion_types_filename, age='uknown', sex='uknown'):
     FLAIR_img = nii.load(input_flair_filename)
     MASK_img = nii.load(MASK_filename)
     # LAB_img = nii.load(LAB_filename)
     # LAB = LAB_img.get_fdata()
     # # LAB_img = MASK_img
-    transform = readITKtransform(transform_filename)
-    det = np.linalg.det(transform)
-    if (det < 0):
-        orientation_report = 'radiological'  # Left is right
-    else:
-        orientation_report = 'neurological'  # Right is right
-    scale = abs(det)
-    unfiltred = nii.load(unfiltred_t1_filename).get_fdata()
-    filtered = nii.load(input_t1_filename).get_fdata()
-    if unfiltred.ndim == 4 and unfiltred.shape[3] == 1:
-        unfiltred = np.reshape(unfiltred, unfiltred.shape[:-1])
-    snr = compute_SNR(unfiltred, filtered)
+
+    info_filename = os.path.join(os.path.dirname(input_t1_filename), os.path.basename(input_t1_filename).replace("mni_t1_", "img_info_").replace(".nii.gz", ".txt"))
+    snr, scale, orientation_report = read_info_file(info_filename)
+
+    MASK = MASK_img.get_data()
+    MASK = MASK.astype('int')
 
     FLAIR = FLAIR_img.get_data()
     # LAB = LAB_img.get_data()
-    MASK = MASK_img.get_data()
     # LAB = LAB.astype('int')
-    MASK = MASK.astype('int')
     vol_ice = (compute_volumes(MASK, [[1]], scale))[0]
     CRISP = nii.load(crisp_filename).get_data()
     vols_tissue = (compute_volumes(CRISP, [[1], [2], [3]], scale))
+
+    T1 = nii.load(input_t1_filename).get_fdata()
+    T1 /= 300
+    T1 = np.clip(T1, 0, 1)
 
     FLAIR /= 300
     FLAIR = np.clip(FLAIR, 0, 1)
@@ -42,19 +38,31 @@ def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_
 
     # Axial
     slice_index = 80
-    filename_seg_0, filename_ice_0, filename_tissue_0, filename_flair_0 = save_images("0", "0", FLAIR[:, :, slice_index], CRISP[:, :, slice_index],
+    filename_seg_0, filename_ice_0, filename_tissue_0, filename_flair_0 = save_images("0",
+                                                                                      T1[:, :, slice_index],
+                                                                                      FLAIR[:, :, slice_index],
+                                                                                      CRISP[:, :, slice_index],
                                                                                       lesion_types[:, :, slice_index],
-                                                                                      MASK[:, :, slice_index], colors_ice, colors_lesions, colors_tissue)
+                                                                                      MASK[:, :, slice_index],
+                                                                                      colors_ice, colors_lesions, colors_tissue)
     # Coronal
     slice_index = 120
-    filename_seg_1, filename_ice_1, filename_tissue_1, filename_flair_1 = save_images("1", "1", FLAIR[:, slice_index, :], CRISP[:, slice_index, :],
+    filename_seg_1, filename_ice_1, filename_tissue_1, filename_flair_1 = save_images("1",
+                                                                                      T1[:, slice_index, :],
+                                                                                      FLAIR[:, slice_index, :],
+                                                                                      CRISP[:, slice_index, :],
                                                                                       lesion_types[:, slice_index, :],
-                                                                                      MASK[:, slice_index, :], colors_ice, colors_lesions, colors_tissue)
+                                                                                      MASK[:, slice_index, :],
+                                                                                      colors_ice, colors_lesions, colors_tissue)
     # Sagittal
     slice_index = 70
-    filename_seg_2, filename_ice_2, filename_tissue_2, filename_flair_2 = save_images("2", "2", FLAIR[slice_index, :, :], CRISP[slice_index, :, :],
+    filename_seg_2, filename_ice_2, filename_tissue_2, filename_flair_2 = save_images("2",
+                                                                                      T1[slice_index, :, :],
+                                                                                      FLAIR[slice_index, :, :],
+                                                                                      CRISP[slice_index, :, :],
                                                                                       lesion_types[slice_index, :, :],
-                                                                                      MASK[slice_index, :, :], colors_ice, colors_lesions, colors_tissue)
+                                                                                      MASK[slice_index, :, :],
+                                                                                      colors_ice, colors_lesions, colors_tissue)
 
     plot_images_filenames = np.array([[filename_flair_0, filename_ice_0, filename_tissue_0, filename_seg_0],
                                       [filename_flair_1, filename_ice_1, filename_tissue_1, filename_seg_1],
@@ -66,3 +74,5 @@ def report(unfiltred_t1_filename, input_t1_filename, input_flair_filename, MASK_
                            scale, colors_ice, colors_lesions, colors_tissue, lesion_types_filename, plot_images_filenames)
 
     save_csv(input_t1_filename, age, sex, all_lesions, vol_ice, snr, scale)
+
+    os.remove(info_filename)
