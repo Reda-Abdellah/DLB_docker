@@ -48,8 +48,8 @@ RUN mkdir /Weights
 #RUN rm -f Compilation_lesionBrain_v10.zip
 COPY trained_all_second_step_iqda/ /Weights/
 
-RUN apt -qqy install git
-RUN chmod 777 -R /opt/deeplesionbrain/*
+#RUN apt -qqy install git
+#RUN chmod 777 -R /opt/deeplesionbrain/*
 #RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
 #RUN mv DLB_docker/* /opt/deeplesionbrain
 COPY *.py *.png *.pkl *.md README.pdf /opt/deeplesionbrain/
