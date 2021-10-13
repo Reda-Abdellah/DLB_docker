@@ -46,4 +46,4 @@ else:
 
 for img in keyword_toList(path=in_folder_path, keyword='.nii'):
     if(not ('.gz' in img)):
-        os.system('gzip -f -9 '+img)
+        run_command('gzip -f -9 '+img)
