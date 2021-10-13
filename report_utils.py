@@ -148,8 +148,8 @@ def compute_volumes(im, labels, scale):
             # print("l=", l, " -> volume=", vl)
             v += vl
         # print("==> ll=", ll, " -> total volume=", v)
-        # vols.extend([(v*scale)/1000])
-        vols.extend([(v*scale)])
+        vols.extend([(v*scale)/1000])
+        #vols.extend([(v*scale)])
     assert(len(vols) == len(labels))
     return vols
 
@@ -298,7 +298,7 @@ def write_lesions(out, lesion_types_filename, scale, WM_vol):
         if(seg_num > 0):
             out.write(Template('\n').safe_substitute())
             out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
-            out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$t Lesions}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($mm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}} & {\\bfseries \\textcolor{text_white}{Position (MNI coord.)}}  \\\\\n').safe_substitute(t=types[i]))
+            out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$t Lesions}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}} & {\\bfseries \\textcolor{text_white}{Position (MNI coord.)}}  \\\\\n').safe_substitute(t=types[i]))
             for j in range(1, seg_num+1):
                 row_color = getRowColor(j-1)
                 lesion = (seg_labels == j).astype('int')
@@ -322,7 +322,7 @@ def write_lesion_table(out, lesion_types_filename, colors_lesions, scale):
     lesion_mask = nii.load(lesion_types_filename).get_data()
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
-    out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Lesion Type} } & {\\bfseries \\textcolor{text_white}{Count}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($mm^{3}$)} } & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)} }  \\\\\n').safe_substitute())
+    out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Lesion Type} } & {\\bfseries \\textcolor{text_white}{Count}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)} } & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)} }  \\\\\n').safe_substitute())
     lesion_type = (lesion_mask > 0).astype('int')
     seg_labels, seg_num_tot = label(lesion_type, return_num=True, connectivity=2)
     vol_tot = (compute_volumes(lesion_type, [[1]], scale))[0]
@@ -387,7 +387,7 @@ def get_image_info(out, orientation_report, scale, snr):
 
 def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol):
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c}\n').safe_substitute())
-    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Tissues Segmentation}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($mm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}}  \\\\\n').safe_substitute())
+    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Tissues Segmentation}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}}  \\\\\n').safe_substitute())
     vols_tissues_names = np.array(['healthy tissue', 'Lesions'])
     tissues_names = np.array(['Cerebrospinal fluid', 'Grey matter', 'White matter (including lesions)'])
     n = "Intracranial Cavity (IC)"
@@ -438,7 +438,7 @@ def get_tissue_plot(out, filenames_normal_tissue):
 
 def write_footnotes(out, display_bounds=False):
         out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
-        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the volumes are presented in absolute value (measured in $mm^{3}$) and in relative value (measured in relation to the IC volume).}\\\\*\n').safe_substitute())
+        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the volumes are presented in absolute value (measured in $cm^{3}$) and in relative value (measured in relation to the IC volume).}\\\\*\n').safe_substitute())
         if(display_bounds):
             out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Values between brackets show expected limits (95\%) of normalized volume in function of sex and age for each measure for reference purpose.}\\\\*\n').safe_substitute())
         out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Position provides the $x$, $y$ and $z$ coordinates of the lesion center of mass.}\\\\*\n').safe_substitute())
@@ -621,3 +621,4 @@ def save_images(suffixe,
     Image.fromarray(out_im, 'RGB').save(filename_tissue)
 
     return filename_seg, filename_ice, filename_tissue, filename_flair
+

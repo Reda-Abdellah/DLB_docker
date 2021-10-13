@@ -76,3 +76,4 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, transform_fil
     save_csv(input_t1_filename, age, sex, all_lesions, vol_ice, snr, scale)
 
     os.remove(info_filename)
+
