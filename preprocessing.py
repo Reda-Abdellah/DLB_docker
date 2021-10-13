@@ -69,10 +69,6 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives ab
     #run_command(command)
     run_command(command)
 
-    tmp = sorted(glob.glob(os.path.join(dirname, "*.nii*")))
-    print("####### files after preprocess: ")
-    print(tmp)
-
     assert os.path.isfile(outT1)
     assert os.path.isfile(outFLAIR)
 
@@ -89,13 +85,6 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives ab
     os.remove(nativeFLAIR_name.replace('.nii', '_check.nii'))
 
     os.remove(os.path.join(dirname, "log.txt")) # matlab log file
-
-    tmp = sorted(glob.glob(os.path.join(dirname, "*.nii*")))
-    print("####### files after replace: ")
-    print(tmp)
-    tmp = sorted(glob.glob(os.path.join(output_dir, "*.nii*")))
-    print("####### files after replace in output_dir: ")
-    print(tmp)
 
     return newT1, newFLAIR, newMASK, newIntoT1, newAffine, newCrisp, newHemi, newStructures
 

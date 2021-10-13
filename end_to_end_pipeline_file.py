@@ -20,13 +20,6 @@ parser.add_argument('-age', type=str, default='Unknown')
 args = parser.parse_args()
 
 
-print("args.T1_filename=", args.T1_filename)
-print("args.FLAIR_filename=", args.FLAIR_filename)
-tmp = sorted(glob.glob(os.path.join(os.path.dirname(args.T1_filename), "*")))
-print("####### files at the beginning: ")
-print(tmp)
-print("")
-
 native_t1_filename = args.T1_filename
 native_flair_filename = args.FLAIR_filename
 
@@ -53,11 +46,6 @@ if(native_flair_filename.endswith('.gz')):
 t0 = time.time()
 mni_t1_filename, mni_flair_filename, mni_mask_filename, intot1, to_mni_affine, crisp_filename, hemi_fileneame, structures_filename = preprocess_file(tmp_t1_filename, tmp_flair_filename, output_dir)
 
-tmp = sorted(glob.glob(os.path.join(os.path.dirname(tmp_t1_filename), "*")))
-print("####### files {} after preprocess: ".format(os.path.dirname(tmp_t1_filename)))
-print(tmp)
-print("")
-
 
 # [platform] compress input files if necessary
 if(native_t1_filename.endswith('.gz')):
@@ -68,13 +56,6 @@ if(native_flair_filename.endswith('.gz')):
     os.remove(tmp_flair_filename)
     # run_command('gzip -9 -f {}'.format(native_flair_filename))
     # native_flair_filename = native_flair_filename+'.gz'
-
-tmp = sorted(glob.glob(os.path.join(os.path.dirname(native_t1_filename), "*")))
-print("####### files {} after preprocess: ".format(os.path.dirname(native_t1_filename)))
-print(tmp)
-print("")
-
-
 
 
 t1 = time.time()
@@ -90,12 +71,6 @@ native_tissues = to_native(crisp_filename, to_mni_affine, native_t1_filename, dt
 # unfiltred_t1_filename = mni_t1_filename.replace('t1', 'unfiltred')
 # to_MNI(native_t1_filename, unfiltred_t1_filename, native_t1_filename, mni_t1_filename)
 t3 = time.time()
-
-tmp = sorted(glob.glob(os.path.join(os.path.dirname(mni_t1_filename), "*")))
-print("####### files here [before gzips] in {}: ".format(os.path.dirname(mni_t1_filename)))
-print(tmp)
-print("")
-
 
 run_command('gzip -f -9 '+mni_mask_filename)
 run_command('gzip -f -9 '+mni_flair_filename)
@@ -114,15 +89,9 @@ mni_lesion_filename = get_lesion_by_regions(mni_t1_filename+'.gz', crisp_filenam
 # mni_lesion_filename is already gzipped (as passed mni_t1 was)
 t5 = time.time()
 
-print("mni_lesion_filename=", mni_lesion_filename)
-tmp = sorted(glob.glob(os.path.join(os.path.dirname(mni_lesion_filename), "*")))
-print("####### files here in {}: ".format(os.path.dirname(mni_lesion_filename)))
-print(tmp)
-print("")
-
 native_lesion = to_native(mni_lesion_filename, to_mni_affine, native_t1_filename.replace(".nii.gz", ".nii")+'.gz', dtype='uint8')
 # run_command('gzip -f -9 '+mni_lesion_filename)
-print("native_lesion=", native_lesion)
+# print("native_lesion=", native_lesion)
 # run_command('gzip -f -9 '+native_lesion)
 # B:TODO: comme on travaill sur des fichiers compressés, ça produit des fichiers compressés : mais on pourrait les compresser plus ????
 
@@ -140,12 +109,6 @@ os.remove(all_lesions_filename)
 
 t7 = time.time()
 
-tmp = sorted(glob.glob(os.path.join(os.path.dirname(mni_lesion_filename), "*")))
-print("####### files here2 in {}: ".format(os.path.dirname(mni_lesion_filename)))
-print(tmp)
-print("")
-
-
 # Copy README.pdf
 shutil.copyfile("README.pdf", os.path.join(os.path.dirname(mni_t1_filename), "README.pdf"))
 
@@ -159,12 +122,6 @@ shutil.copyfile(native_flair_filename, os.path.join(os.path.dirname(mni_t1_filen
 # remove original_t1_{}.nii (not compressed) produced by preprocessing
 # orig_t1_filename = os.path.join(os.path.dirname(mni_t1_filename), os.path.basename(mni_t1_filename).replace("mni_t1_", "original_t1_"))
 # os.remove(orig_t1_filename)
-
-tmp = sorted(glob.glob(os.path.join(os.path.dirname(mni_lesion_filename), "*")))
-print("####### files here3 in {}: ".format(os.path.dirname(mni_lesion_filename)))
-print(tmp)
-print("")
-
 
 t8 = time.time()
 print("time preprocess={:.2f}s".format(t1-t0))
