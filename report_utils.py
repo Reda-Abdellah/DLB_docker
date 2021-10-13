@@ -187,7 +187,7 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         plt.figure(figsize=(20,13))
         plt.fill_between(np.arange(101), y1, y2, color=['lightgreen'])
         plt.plot(np.arange(101), (y1+ y2)/2, 'b--', linewidth=3)
-        plt.title(structure[i])
+        plt.title(structure[i], fontweight='bold')
         plt.xlabel('age (years)')
         plt.ylabel('volume (%)')
         if(not age == 'unknown'):
@@ -305,7 +305,7 @@ def write_lesions(out, lesion_types_filename, scale, WM_vol):
                 pos = center_of_mass(lesion)
                 pos = (int(pos[0]), int(pos[1]), int(pos[2]))
                 vol = (compute_volumes(lesion, [[1]], scale))[0]
-                out.write(Template(row_color+'Lesion $p & $g & $a & $d\\\\ \n').safe_substitute(p=lesion_number, g="{:5.2f}".format(vol), a="{:5.2f}".format(vol*100/vol_tot), d=pos))
+                out.write(Template(row_color+'Lesion $p & $g & $a & $d\\\\ \n').safe_substitute(p=lesion_number, g="{:5.4f}".format(vol), a="{:5.4f}".format(vol*100/vol_tot), d=pos))
                 lesion_number = lesion_number + 1
 
             out.write(Template('\\end{tabularx}\n').safe_substitute())
@@ -327,13 +327,13 @@ def write_lesion_table(out, lesion_types_filename, colors_lesions, scale):
     seg_labels, seg_num_tot = label(lesion_type, return_num=True, connectivity=2)
     vol_tot = (compute_volumes(lesion_type, [[1]], scale))[0]
 
-    out.write(Template(getRowColor(0)+'Total Lesions & $g & $a & $d\\\\ \n').safe_substitute(g=seg_num_tot, a="{:5.2f}".format(vol_tot), d="{:5.2f}".format(vol_tot*100/vol_tot)))
+    out.write(Template(getRowColor(0)+'Total Lesions & $g & $a & $d\\\\ \n').safe_substitute(g=seg_num_tot, a="{:5.4f}".format(vol_tot), d="{:5.2f}".format(vol_tot*100/vol_tot)))
     for i in range(1, 6):
         row_color = getRowColor(i)
         lesion_type = (lesion_mask == i).astype('int')
         seg_labels, seg_num = label(lesion_type, return_num=True, connectivity=2)
         vol = (compute_volumes(lesion_type, [[1]], scale))[0]
-        out.write(Template(row_color+'$p & $g & $a & $d\\\\ \n').safe_substitute(p=types[i], g=seg_num, a="{:5.2f}".format(vol), d="{:5.2f}".format(vol*100/vol_tot)))
+        out.write(Template(row_color+'$p & $g & $a & $d\\\\ \n').safe_substitute(p=types[i], g=seg_num, a="{:5.4f}".format(vol), d="{:5.2f}".format(vol*100/vol_tot)))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
 
@@ -359,6 +359,7 @@ def load_latex_packages(out):
 
 def capitalize(str):
     return str[0].upper() + str[1:]
+
 
 def get_patient_info(out, basename, gender, age):
     out.write(Template('\n').safe_substitute())
@@ -412,7 +413,7 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
 
 
 def plot_img(out, plot_images_filenames):
-    titles = ['FLAIR', 'Intracranial cavity segmentation', 'Tissues segmentation', 'Lesions segmentation']
+    titles = ['FLAIR', 'Intracranial cavity segmentation', 'Tissue segmentation', 'Lesion segmentation']
     for i in [1, 2, 0, 3]:
         out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
         out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$v}} \\\\\n').safe_substitute(v=titles[i]))
@@ -429,6 +430,9 @@ def get_tissue_plot(out, filenames_normal_tissue):
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
     out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$v}} \\\\\n').safe_substitute(v='Tissue expected volumes'))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
+    out.write(Template('\n').safe_substitute())
+    out.write(Template('\\vspace*{5pt}\n').safe_substitute())
+    out.write(Template('\n').safe_substitute())
     out.write(Template('\\begin{tabularx}{0.8\\textwidth}{X}\n').safe_substitute())
     out.write(Template('\\centering \\includegraphics[width=0.25\\textwidth]{$f0} \\includegraphics[width=0.25\\textwidth]{$f1} \\includegraphics[width=0.25\\textwidth]{$f2}\\\\\n').safe_substitute(f0=filenames_normal_tissue[0], f1=filenames_normal_tissue[1], f2=filenames_normal_tissue[2]))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
