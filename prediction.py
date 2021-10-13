@@ -11,25 +11,25 @@ np.random.seed(seed)
 python_random.seed(seed)
 tf.compat.v1.set_random_seed(seed)
 ######################################
-from keras.models import load_model
+# from keras.models import load_model
 from keras import backend as K
-from scipy import ndimage
+# from scipy import ndimage
 import nibabel as nii
 import glob
 import time
-import gc
-import datetime
+# import gc
+# import datetime
 import modelos
 import scipy.misc
-from scipy import signal
-import multiprocessing as mp
+# from scipy import signal
+# import multiprocessing as mp
 # from sklearn.metrics import confusion_matrix
 from shutil import copyfile
 import statsmodels.api as sm
 from scipy.signal import argrelextrema
-from collections import OrderedDict, defaultdict
+# from collections import OrderedDict, defaultdict
 # from skimage import measure
-from scipy.stats import pearsonr
+# from scipy.stats import pearsonr
 from utils import *
 
 
@@ -253,7 +253,7 @@ def to_native(inputname, transform_name, reference_name, dtype='float32'):
     # ants_bin = '../Compilation_lesionBrain_v10/Registration/antsApplyTransforms'
     command = ants_bin + ' -d 3 -i ' + inputname + ' -r ' + reference_name + ' -o ' + outputname + ' -n MultiLabel[0.3,0] -t [' + transform_name + ', 1]'
     print(str(command))
-    os.system(str(command))
+    run_command(str(command))
     if (dtype != 'float32'):
         # B: ants seems to always save images as float32
         # we have to reload & resave to have a different dtype.
@@ -269,5 +269,5 @@ def to_MNI(inputname, outputname, transform_name, reference_name):
     ants_bin = '/opt/deeplesionbrain/Registration/antsApplyTransforms'
     command = ants_bin + ' -d 3 -i ' + inputname + ' -r ' + reference_name + ' -o ' + outputname + ' -n BSpline -t ' + transform_name
     print(str(command))
-    os.system(str(command))
+    run_command(str(command))
     return outputname
