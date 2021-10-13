@@ -168,7 +168,7 @@ def read_info_file(information_filename):
 
 
 def get_expected_volumes(age, sex, tissue_vol, vol_ice):
-    plt.rcParams.update({'font.size': 22})
+    plt.rcParams.update({'font.size': 40})
     if(sex == 'f' or sex == 'femme' or sex == 'woman'):
         sex = 'female'
     if(sex == 'm' or sex == 'homme' or sex == 'man'):
@@ -184,14 +184,16 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         else:
             y1 = dataset[sex][i]['up']
             y2 = dataset[sex][i]['down']
+        plt.figure(figsize=(20,13))
         plt.fill_between(np.arange(101), y1, y2, color=['lightgreen'])
+        plt.plot(np.arange(101), (y1+ y2)/2, 'b--', linewidth=3)
         plt.title(structure[i])
-        plt.xlabel('age')
+        plt.xlabel('age (years)')
         plt.ylabel('volume (%)')
         if(not age == 'unknown'):
-            plt.plot([int(age)], [int(100*tissue_vol[i]/vol_ice)], 'ro')
+            plt.scatter([int(age)], [int(100*tissue_vol[i]/vol_ice)], s=300, c='red')
             normal_vol.append([y2[int(age)], y1[int(age)]])
-        plt.savefig(filenames[i], dpi=300)
+        plt.savefig(filenames[i], dpi=300, bbox_inches = 'tight', pad_inches=0.1)
         plt.clf()
     return filenames, normal_vol
 
