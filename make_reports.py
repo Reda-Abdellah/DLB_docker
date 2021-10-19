@@ -1,7 +1,7 @@
 from report_utils import *
 
 
-def report(input_t1_filename, input_flair_filename, MASK_filename, transform_filename,
+def report(input_t1_filename, input_flair_filename, MASK_filename,structures_filename, transform_filename,
            crisp_filename, lesion_types_filename, age='uknown', sex='uknown'):
     FLAIR_img = nii.load(input_flair_filename)
     MASK_img = nii.load(MASK_filename)
@@ -21,6 +21,8 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, transform_fil
     vol_ice = (compute_volumes(MASK, [[1]], scale))[0]
     CRISP = nii.load(crisp_filename).get_data()
     vols_tissue = (compute_volumes(CRISP, [[1], [2], [3]], scale))
+    Structures = nii.load(structures_filename).get_data()
+    vols_structures= (compute_volumes(Structures, [[i] for i in range(1,17)], scale))
 
     T1 = nii.load(input_t1_filename).get_fdata()
     T1 /= 300
@@ -33,9 +35,13 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, transform_fil
     colors_lesions = np.array([[0, 0, 0], [255, 255, 0], [0, 255, 255], [255, 0, 255], [88, 41, 0], [249, 228, 183]])
     colors_tissue = np.array([[0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255]])
     colors_ice = np.array([[0, 0, 0], [255, 0, 0]])
+    colors_structures= np.array([[0, 0, 0], [255, 0, 0], [255, 0, 0], [0,255,0], [0,255,0], [0, 0, 255], [0, 0, 255], 
+                                   [255, 255, 0], [255, 255, 0], [255, 0, 255], [255, 0, 255], [0, 255, 255], [0, 255, 255],
+                                   [128, 0, 0], [128, 0, 0], [0, 128, 0], [0, 128, 0] ])
 
     lesion_types = nii.load(lesion_types_filename).get_data()
 
+    #I changed colors_ice with colors_structures and MASK with Structures
     # Axial
     slice_index = 80
     filename_seg_0, filename_ice_0, filename_tissue_0, filename_flair_0 = save_images("0",
@@ -43,8 +49,8 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, transform_fil
                                                                                       FLAIR[:, :, slice_index],
                                                                                       CRISP[:, :, slice_index],
                                                                                       lesion_types[:, :, slice_index],
-                                                                                      MASK[:, :, slice_index],
-                                                                                      colors_ice, colors_lesions, colors_tissue)
+                                                                                      Structures[:, :, slice_index],
+                                                                                      colors_structures, colors_lesions, colors_tissue)
     # Coronal
     slice_index = 120
     filename_seg_1, filename_ice_1, filename_tissue_1, filename_flair_1 = save_images("1",
@@ -52,8 +58,8 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, transform_fil
                                                                                       FLAIR[:, slice_index, :],
                                                                                       CRISP[:, slice_index, :],
                                                                                       lesion_types[:, slice_index, :],
-                                                                                      MASK[:, slice_index, :],
-                                                                                      colors_ice, colors_lesions, colors_tissue)
+                                                                                      Structures[:, slice_index, :],
+                                                                                      colors_structures, colors_lesions, colors_tissue)
     # Sagittal
     slice_index = 70
     filename_seg_2, filename_ice_2, filename_tissue_2, filename_flair_2 = save_images("2",
@@ -61,8 +67,8 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, transform_fil
                                                                                       FLAIR[slice_index, :, :],
                                                                                       CRISP[slice_index, :, :],
                                                                                       lesion_types[slice_index, :, :],
-                                                                                      MASK[slice_index, :, :],
-                                                                                      colors_ice, colors_lesions, colors_tissue)
+                                                                                      Structures[slice_index, :, :],
+                                                                                      colors_structures, colors_lesions, colors_tissue)
 
     plot_images_filenames = np.array([[filename_flair_0, filename_ice_0, filename_tissue_0, filename_seg_0],
                                       [filename_flair_1, filename_ice_1, filename_tissue_1, filename_seg_1],
@@ -70,10 +76,17 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, transform_fil
 
     filenames_normal_tissue, normal_vol = get_expected_volumes(age, sex, vols_tissue, vol_ice)
 
-    all_lesions = save_pdf(input_t1_filename, age, sex, vols_tissue, vol_ice, snr, orientation_report, filenames_normal_tissue, normal_vol,
-                           scale, colors_ice, colors_lesions, colors_tissue, lesion_types_filename, plot_images_filenames)
+    all_lesions = save_pdf(input_t1_filename, age, sex, snr, orientation_report,scale,
+                            vols_tissue, vol_ice, normal_vol, vols_structures,
+                            colors_ice, colors_lesions, colors_tissue, colors_structures,
+                            lesion_types_filename, plot_images_filenames, filenames_normal_tissue )
 
     save_csv(input_t1_filename, age, sex, all_lesions, vol_ice, snr, scale)
 
     os.remove(info_filename)
 
+"""
+report(input_t1_filename='/data/mni_t1_MPRAGE.nii.gz', input_flair_filename='/data/mni_flair_MPRAGE.nii.gz',
+        MASK_filename='/data/mni_mask_MPRAGE.nii.gz',structures_filename='/data/mni_structures_MPRAGE.nii.gz', transform_filename='/data/matrix_affine_native_to_mni_MPRAGE.txt',
+           crisp_filename='/data/mni_tissues_MPRAGE.nii.gz', lesion_types_filename='/data/mni_lesions_MPRAGE.nii.gz', age='25', sex='male')
+#"""

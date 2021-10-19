@@ -41,6 +41,34 @@ def load_obj(name):
     with open(name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
+def get_structures(hemi_fileneame, structures_sym_filename):
+    hemi = nii.load(hemi_fileneame).get_data()
+    structures_sym = nii.load(structures_sym_filename).get_data() 
+    structures = np.zeros(hemi.shape)
+    
+    structures[np.logical_and((hemi==1) , (structures_sym==9))]=15
+    structures[np.logical_and((hemi==1) , (structures_sym==8))]=13
+    structures[np.logical_and((hemi==1) , (structures_sym==7))]=11
+    structures[np.logical_and((hemi==1) , (structures_sym==6))]=9
+    structures[np.logical_and((hemi==1) , (structures_sym==5))]=7
+    structures[np.logical_and((hemi==1) , (structures_sym==4))]=5
+    structures[np.logical_and((hemi==1) , (structures_sym==3))]=3
+    structures[(structures_sym==1)]=1
+    
+    structures[np.logical_and((hemi==2) , (structures_sym==9))]=16
+    structures[np.logical_and((hemi==2) , (structures_sym==8))]=14
+    structures[np.logical_and((hemi==2) , (structures_sym==7))]=12
+    structures[np.logical_and((hemi==2) , (structures_sym==6))]=10
+    structures[np.logical_and((hemi==2) , (structures_sym==5))]=8
+    structures[np.logical_and((hemi==2) , (structures_sym==4))]=6
+    structures[np.logical_and((hemi==2) , (structures_sym==3))]=4
+    structures[(structures_sym==2)]=2
+
+    structures_name = structures_sym_filename.replace('_sym', '').replace('.nii', '.nii.gz')
+    array_img = nii.Nifti1Image(structures.astype('uint8'), nii.load(hemi_fileneame).affine)
+    array_img.to_filename(structures_name)
+    return structures_name
+
 
 def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesion):
 
@@ -325,7 +353,7 @@ def write_lesion_table(out, lesion_types_filename, colors_lesions, scale):
     lesion_mask = nii.load(lesion_types_filename).get_data()
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
-    out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Lesion Type} } & {\\bfseries \\textcolor{text_white}{Count}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)} } & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)} }  \\\\\n').safe_substitute())
+    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Lesion Type} } & {\\bfseries \\textcolor{text_white}{Count}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)} } & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)} }  \\\\\n').safe_substitute())
     lesion_type = (lesion_mask > 0).astype('int')
     seg_labels, seg_num_tot = label(lesion_type, return_num=True, connectivity=2)
     vol_tot = (compute_volumes(lesion_type, [[1]], scale))[0]
@@ -417,10 +445,40 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\vspace*{10pt}\n').safe_substitute())
 
+def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue):
+    out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
+    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Structures}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}} & {\\bfseries \\textcolor{text_white}{Left (Right) struct. vol. (\%)}}  \\\\\n').safe_substitute())
+    """
+    structures_names = np.array(['Left ventricle', 'Right ventricle', 'Left caudate','Right caudate',
+                                    'Left putamen','Right putamen', 'Left thalamus','Right thalamus',
+                                    'Left globus pallidus','Right globus pallidus', 'Left hipocampus','Right hipocampus',
+                                'Left amigdala','Right amigdala', 'Left accumbens', 'Right accumbens'
+                                    ])
+    """
+    structures_names = np.array(['Ventricle', 'Caudate', 'Putamen', 'Thalamus','Globus pallidus' ,'Hipocampus','Amigdala', 'Accumbens'])
+    
+    
+    for i in range(len(structures_names)):
+        row_color = getRowColor(i)
+        n = structures_names[i]
+        v = vols_structures[i*2]+vols_structures[i*2+1]
+        left = 100*vols_structures[i*2]/v
+        p = 100*v/vol_ice
+        out.write(Template(row_color+'$n & $v & $p & $left ($right) \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), left="{:5.2f}".format(left), right="{:5.2f}".format(100-left)  ) )
+        
+    out.write(Template('\\end{tabularx}\n').safe_substitute())
+    out.write(Template('\n').safe_substitute())
+    out.write(Template('\n').safe_substitute())
+    out.write(Template('\n').safe_substitute())
+    out.write(Template('\\vspace*{10pt}\n').safe_substitute())
+
 
 def plot_img(out, plot_images_filenames):
-    titles = ['FLAIR', 'Intracranial cavity segmentation', 'Tissue segmentation', 'Lesion segmentation']
-    for i in [1, 2, 0, 3]:
+    #titles = ['FLAIR', 'Intracranial cavity segmentation', 'Tissue segmentation', 'Lesion segmentation']
+    titles = ['FLAIR', 'Structures segmentation', 'Tissue segmentation', 'Lesion segmentation']
+    
+    #for i in [1, 2, 0, 3]:
+    for i in [2, 1, 0, 3]:
         out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
         out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$v}} \\\\\n').safe_substitute(v=titles[i]))
         out.write(Template('\\end{tabularx}\n').safe_substitute())
@@ -453,14 +511,15 @@ def write_footnotes(out, display_bounds=False):
             out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Values between brackets show expected limits (95\%) of normalized volume in function of sex and age for each measure for reference purpose.}\\\\*\n').safe_substitute())
         out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Position provides the $x$, $y$ and $z$ coordinates of the lesion center of mass.}\\\\*\n').safe_substitute())
         out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Lesion burden is calculated as the lesion volume divided by the white matter volume.}\\\\*\n').safe_substitute())
-        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the result images are located in the MNI space (neurological orientation).}\\\\\*\n').safe_substitute())
+        out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the result images are located in the MNI space (neurological orientation).}\\\\*\n').safe_substitute())
         # out.write(Template('\\textcolor{blue}{\\footnotesize \\itshape *Result images located in the MNI space (neurological orientation).}\\\\*\n').safe_substitute())
         out.write(Template('\\end{tabularx}\n').safe_substitute())
 
 
-def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_report, filenames_normal_tissue, normal_vol,
-             scale, colors_ice, colors_lesions, colors_tissue, lesion_types_filename,
-             plot_images_filenames):
+def save_pdf(input_file, age, gender, snr, orientation_report,scale,
+                            vols_tissue, vol_ice, normal_vol, vols_structures,
+                            colors_ice, colors_lesions, colors_tissue, colors_structures,
+                            lesion_types_filename, plot_images_filenames, filenames_normal_tissue):
     basename = os.path.basename(input_file).replace("mni_", "").replace("t1_", "").replace(".nii.gz", "")
     # output_tex_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".tex").replace("mni", "report")
     output_tex_filename = os.path.join(os.path.dirname(input_file), os.path.basename(input_file).replace("mni_t1_", "report_").replace(".nii.gz", ".tex").replace(".nii", ".tex"))
@@ -505,6 +564,11 @@ def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_rep
         print('Tissues Segmentation....')
         get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol)
 
+        # structures Segmentation
+        print('structures Segmentation....')
+        get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_structures)
+
+
         # Tissue expected volumes
         print('Tissue expected volumes....')
         get_tissue_plot(out, filenames_normal_tissue)
@@ -540,7 +604,7 @@ def save_pdf(input_file, age, gender, vols_tissue, vol_ice, snr, orientation_rep
         output_tex_dirname = os.path.dirname(output_tex_filename)
         if not output_tex_dirname:
             output_tex_dirname = os.getcwd()
-        # command = "xelatex -interaction=nonstopmode -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
+        #command = "xelatex -interaction=nonstopmode -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
         command = "xelatex -interaction=batchmode -halt-on-error -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
         print(command)
         run_command(command)

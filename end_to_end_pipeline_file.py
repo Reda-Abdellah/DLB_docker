@@ -44,7 +44,7 @@ if(native_flair_filename.endswith('.gz')):
 
 
 t0 = time.time()
-mni_t1_filename, mni_flair_filename, mni_mask_filename, intot1, to_mni_affine, crisp_filename, hemi_fileneame, structures_filename = preprocess_file(tmp_t1_filename, tmp_flair_filename, output_dir)
+mni_t1_filename, mni_flair_filename, mni_mask_filename, intot1, to_mni_affine, crisp_filename, hemi_fileneame, structures_sym_filename = preprocess_file(tmp_t1_filename, tmp_flair_filename, output_dir)
 
 
 # [platform] compress input files if necessary
@@ -85,7 +85,8 @@ run_command('gzip -f -9 '+crisp_filename)  # mni_tissues
 # run_command('gzip -f -9 '+structures_filename)  # B:useless
 t4 = time.time()
 
-mni_lesion_filename = get_lesion_by_regions(mni_t1_filename+'.gz', crisp_filename+'.gz', hemi_fileneame, structures_filename, all_lesions_filename)
+mni_lesion_filename = get_lesion_by_regions(mni_t1_filename+'.gz', crisp_filename+'.gz', hemi_fileneame, structures_sym_filename, all_lesions_filename)
+structures_filename = get_structures(hemi_fileneame, structures_sym_filename)
 # mni_lesion_filename is already gzipped (as passed mni_t1 was)
 t5 = time.time()
 
@@ -100,12 +101,13 @@ t6 = time.time()
 if(not args.no_report):
     age = args.age.lower()
     sex = args.sex.lower()
-    report(mni_t1_filename+'.gz', mni_flair_filename+'.gz', mni_mask_filename+'.gz',  # all_lesions_filename+'.gz',
+    report(mni_t1_filename+'.gz', mni_flair_filename+'.gz', mni_mask_filename+'.gz',structures_filename,  # all_lesions_filename+'.gz',
            to_mni_affine, crisp_filename+'.gz', mni_lesion_filename, age, sex)
 # os.remove(unfiltred_t1_filename)
 os.remove(hemi_fileneame)
-os.remove(structures_filename)
 os.remove(all_lesions_filename)
+os.remove(structures_sym_filename)
+
 
 t7 = time.time()
 

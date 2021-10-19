@@ -60,7 +60,7 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives ab
     newAffine = os.path.join(output_dir, 'matrix_affine_native_to_mni_' + T1_name.replace('.nii', '.txt'))
     newCrisp = os.path.join(output_dir, 'mni_tissues_' + T1_name)
     newHemi = os.path.join(output_dir, 'mni_hemi_' + T1_name)  # B:TODO:useless ???
-    newStructures = os.path.join(output_dir, 'mni_structures_' + T1_name)  # B:TODO:useless ???
+    newStructures = os.path.join(output_dir, 'mni_structures_sym_' + T1_name)  # B:TODO:useless ???
 
 
     print('processing: ' + nativeT1_name + ' and ' + nativeFLAIR_name)
