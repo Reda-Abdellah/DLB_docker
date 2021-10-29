@@ -219,8 +219,8 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         plt.fill_between(np.arange(101), y1, y2, color=['lightgreen'])
         plt.plot(np.arange(101), (y1+ y2)/2, 'b--', linewidth=3)
         plt.title(structure[i], fontweight='bold')
-        plt.xlabel('age (years)')
-        plt.ylabel('volume (%)')
+        plt.xlabel('Age (years)')
+        plt.ylabel('Volume (%)')
         if(not age == 'unknown'):
             plt.scatter([int(age)], [int(100*tissue_vol[tissue_vol_indices[i]]/vol_ice)], s=300, c='red')
             normal_vol.append([y2[int(age)], y1[int(age)]])
@@ -312,61 +312,102 @@ def getRowColor(i):
         return "\\rowcolor{gray!15}"
 
 
-def write_lesions(out, lesion_types_filename, scale, WM_vol):
-    types = ['healthy', 'Periventricular', 'Deepwhite', 'Juxtacortical', 'Cerebelar', 'Medular']
-    lesion_mask = nii.load(lesion_types_filename).get_data()
-    vol_tot = (compute_volumes((lesion_mask > 0).astype('int'), [[1]], scale))[0]
-    lesion_number = 1
-    all_lesions = []
-    les = (lesion_mask > 0).astype('int')
-    _, seg_num = label(les, return_num=True, connectivity=2)
-    all_lesions.append({'count': seg_num, 'volume_abs': vol_tot, 'volume_rel': vol_tot*100/vol_tot, 'burden': vol_tot*100/WM_vol})
-    for i in range(1, 6):
-        lesion_type = (lesion_mask == i).astype('int')
-        seg_labels, seg_num = label(lesion_type, return_num=True, connectivity=2)
-        vol = (compute_volumes(lesion_type, [[1]], scale))[0]
-        all_lesions_type = {'count': seg_num, 'volume_abs': vol, 'volume_rel': vol*100/vol_tot, 'burden': vol*100/WM_vol}
+def compute_lesion_measures(lesion_type, scale, WM_vol):
+    lesion_type = lesion_type.astype('int')
+    seg_labels, seg_num = label(lesion_type, return_num=True, connectivity=2)
+    vol = (compute_volumes(lesion_type, [[1]], scale))[0]
+    lesion_burden = (100 * vol) / WM_vol
+    return seg_labels, seg_num, vol, lesion_burden
+
+
+def write_lesions_details(out, name, seg_labels, seg_num, scale, vol_ice, lesion_number):
         if(seg_num > 0):
-            out.write(Template('\n').safe_substitute())
-            out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
-            out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$t Lesions}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}} & {\\bfseries \\textcolor{text_white}{Position (MNI coord.)}}  \\\\\n').safe_substitute(t=types[i]))
+            # sort lesions by descending volume
+            v = []
             for j in range(1, seg_num+1):
-                row_color = getRowColor(j-1)
                 lesion = (seg_labels == j).astype('int')
                 pos = center_of_mass(lesion)
                 pos = (int(pos[0]), int(pos[1]), int(pos[2]))
                 vol = (compute_volumes(lesion, [[1]], scale))[0]
-                out.write(Template(row_color+'Lesion $p & $g & $a & $d\\\\ \n').safe_substitute(p=lesion_number, g="{:5.4f}".format(vol), a="{:5.4f}".format(vol*100/vol_tot), d=pos))
+                v.append([vol, pos])
+            v = sorted(v, key=lambda vals: vals[0], reverse=True)
+
+            out.write(Template('\n').safe_substitute())
+            out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
+            out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$t Lesions}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}} & {\\bfseries \\textcolor{text_white}{Position (MNI coord.)}}  \\\\\n').safe_substitute(t=name))
+            for j in range(seg_num):
+                row_color = getRowColor(j)
+                vol, pos = v[j]
+                out.write(Template(row_color+'Lesion $p & $g & $a & $d\\\\ \n').safe_substitute(p=lesion_number, g="{:5.4f}".format(vol), a="{:5.4f}".format(vol*100/vol_ice), d=pos))
                 lesion_number = lesion_number + 1
 
             out.write(Template('\\end{tabularx}\n').safe_substitute())
             out.write(Template('\n').safe_substitute())
             out.write(Template('\\vspace*{10pt}\n').safe_substitute())
+
+
+def write_lesions(out, lesion_types_filename, scale, vol_ice, WM_vol):
+    types = ['healthy', 'Periventricular', 'Deepwhite', 'Juxtacortical', 'Cerebellar', 'Medular']
+    lesion_mask = nii.load(lesion_types_filename).get_data()
+
+    lesion_number = 1
+    all_lesions = []
+    # B TODO : divide by vol_ice ????
+    _, seg_num, vol_tot, lesion_burden = compute_lesion_measures((lesion_mask > 0), scale, WM_vol)
+    all_lesions.append({'count': seg_num, 'volume_abs': vol_tot, 'volume_rel': vol_tot*100/vol_ice, 'burden': lesion_burden})
+    for i in range(1, 4):
+        lesion_type = (lesion_mask == i).astype('int')
+        seg_labels, seg_num, vol, lesion_burden = compute_lesion_measures((lesion_mask == i), scale, WM_vol)
+        write_lesions_details(out, types[i], seg_labels, seg_num, scale, vol_tot, lesion_number)
+        lesion_number += seg_num
+        all_lesions_type = {'count': seg_num, 'volume_abs': vol, 'volume_rel': vol*100/vol_ice, 'burden': lesion_burden}
         all_lesions.append(all_lesions_type)
+
+    seg_labelsC, seg_numC, volC, lesion_burdenC = compute_lesion_measures((lesion_mask == 4), scale, WM_vol)  # Cerebellar
+    seg_labelsM, seg_numM, volM, lesion_burdenM = compute_lesion_measures((lesion_mask == 5), scale, WM_vol)  # Medular
+    write_lesions_details(out, types[4], seg_labelsC, seg_numC, scale, vol_tot, lesion_number)
+    lesion_number += seg_numC
+    write_lesions_details(out, types[5], seg_labelsM, seg_numM, scale, vol_tot, lesion_number)
+    lesion_number += seg_numM
+    # infratentorial
+    all_lesions_type = {'count': seg_numC+seg_numM, 'volume_abs': volC+volM, 'volume_rel': (volC+volM)*100/vol_ice, 'burden': lesion_burdenC+lesion_burdenM}
+    all_lesions.append(all_lesions_type)
+    all_lesions_type = {'count': seg_numC, 'volume_abs': volC, 'volume_rel': volC*100/vol_ice, 'burden': lesion_burdenC}
+    all_lesions.append(all_lesions_type)
+    all_lesions_type = {'count': seg_numM, 'volume_abs': volM, 'volume_rel': volM*100/vol_ice, 'burden': lesion_burdenM}
+    all_lesions.append(all_lesions_type)
+
     out.write(Template('\n').safe_substitute())
     # out.write(Template('\\vspace*{10pt}\n').safe_substitute())
     return all_lesions
 
 
-def write_lesion_table(out, lesion_types_filename, colors_lesions, scale):
-    types = ['healthy', 'Periventricular', 'Deepwhite', 'Juxtacortical', 'Cerebelar', 'Medular']
+def write_lesion_table(out, lesion_types_filename, colors_lesions, scale, vol_ice, WM_vol):
+    types = ['healthy', 'Periventricular', 'Deepwhite', 'Juxtacortical', 'Cerebellar', 'Medular']
     lesion_mask = nii.load(lesion_types_filename).get_data()
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
-    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Lesion Type} } & {\\bfseries \\textcolor{text_white}{Count}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)} } & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)} }  \\\\\n').safe_substitute())
-    lesion_type = (lesion_mask > 0).astype('int')
-    seg_labels, seg_num_tot = label(lesion_type, return_num=True, connectivity=2)
-    vol_tot = (compute_volumes(lesion_type, [[1]], scale))[0]
+    out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c c}\n').safe_substitute())
+    out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Lesion} } & {\\bfseries \\textcolor{text_white}{Count}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)} } & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)} } & {\\bfseries \\textcolor{text_white}{Lesion burden} }\\\\\n').safe_substitute())
+    _, seg_num_tot, vol_tot, lesion_burden = compute_lesion_measures((lesion_mask > 0), scale, WM_vol)
+    out.write(Template(getRowColor(0)+'Total Lesions & $g & $a & $d & $b\\\\ \n').safe_substitute(g=seg_num_tot, a="{:5.4f}".format(vol_tot), d="{:5.4f}".format(vol_tot*100/vol_ice), b="{:5.4f}".format(lesion_burden)))
+    for i in range(1, 4):
+        _, seg_num, vol, lesion_burden = compute_lesion_measures((lesion_mask == i), scale, WM_vol)
+        out.write(Template(getRowColor(i)+'$p & $g & $a & $d & $b\\\\ \n').safe_substitute(p=types[i], g=seg_num, a="{:5.4f}".format(vol), d="{:5.4f}".format(vol*100/vol_ice), b="{:5.4f}".format(lesion_burden)))
+    _, seg_numC, volC, lesion_burdenC = compute_lesion_measures((lesion_mask == 4), scale, WM_vol)  # Cerebellar
+    _, seg_numM, volM, lesion_burdenM = compute_lesion_measures((lesion_mask == 5), scale, WM_vol)  # Medular 
+    # Infratentorial = Cerebellar + Medular
+    seg_numI = seg_numC + seg_numM
+    volI = volC + volM
+    lesion_burdenI = lesion_burdenC + lesion_burdenM
+    out.write(Template(getRowColor(4)+'$p & $g & $a & $d & $b\\\\\n').safe_substitute(p='Infratentorial', g=seg_numI, a="{:5.4f}".format(volI), d="{:5.4f}".format(volI*100/vol_ice), b="{:5.4f}".format(lesion_burdenI)))
+    if seg_numI > 0:
+        out.write(Template('\\hline\n').safe_substitute())
+        out.write(Template(getRowColor(5)+'\quad $p & $g & $a & $d & $b\\\\ \n').safe_substitute(p=types[4], g=seg_numC, a="{:5.4f}".format(volC), d="{:5.4f}".format(volC*100/vol_ice), b="{:5.4f}".format(lesion_burdenC)))
+        out.write(Template(getRowColor(6)+'\quad $p & $g & $a & $d & $b\\\\ \n').safe_substitute(p=types[5], g=seg_numM, a="{:5.4f}".format(volM), d="{:5.4f}".format(volM*100/vol_ice), b="{:5.4f}".format(lesion_burdenM)))
 
-    out.write(Template(getRowColor(0)+'Total Lesions & $g & $a & $d\\\\ \n').safe_substitute(g=seg_num_tot, a="{:5.4f}".format(vol_tot), d="{:5.2f}".format(vol_tot*100/vol_tot)))
-    for i in range(1, 6):
-        row_color = getRowColor(i)
-        lesion_type = (lesion_mask == i).astype('int')
-        seg_labels, seg_num = label(lesion_type, return_num=True, connectivity=2)
-        vol = (compute_volumes(lesion_type, [[1]], scale))[0]
-        out.write(Template(row_color+'$p & $g & $a & $d\\\\ \n').safe_substitute(p=types[i], g=seg_num, a="{:5.4f}".format(vol), d="{:5.2f}".format(vol*100/vol_tot)))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
+# B:TODO: Are these values in the CSV ????
 
 
 def load_latex_packages(out):
@@ -419,7 +460,7 @@ def get_image_info(out, orientation_report, scale, snr):
 
 def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol):
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c}\n').safe_substitute())
-    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Tissues Segmentation}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}}  \\\\\n').safe_substitute())
+    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Tissues}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}}  \\\\\n').safe_substitute())
 
     tissues_names = np.array(['White matter (including lesions)', 'Grey matter', 'Cerebrospinal fluid'])
     tissue_vol_indices = [2, 1, 0]  # in tissue_vol, order is CSF, GM, WM
@@ -444,6 +485,7 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
     out.write(Template('\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\vspace*{10pt}\n').safe_substitute())
+
 
 def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue):
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
@@ -575,7 +617,7 @@ def save_pdf(input_file, age, gender, snr, orientation_report,scale,
 
         # Lesion tables
         print('Lesion tables....')
-        write_lesion_table(out, lesion_types_filename, colors_lesions, scale)
+        write_lesion_table(out, lesion_types_filename, colors_lesions, scale, vol_ice, WM_vol=vols_tissue[2])
 
         out.write(Template('\\vspace*{50pt}\n').safe_substitute())
 
@@ -594,7 +636,7 @@ def save_pdf(input_file, age, gender, snr, orientation_report,scale,
 
         # Lesion type tables
         print('Lesion type tables....')
-        all_lesions = write_lesions(out, lesion_types_filename, scale, vols_tissue[2])
+        all_lesions = write_lesions(out, lesion_types_filename, scale, vol_ice, vols_tissue[2])
 
         out.write(Template('\\end{center}\n').safe_substitute())
         out.write(Template('\\end{document}\n').safe_substitute())
@@ -609,7 +651,7 @@ def save_pdf(input_file, age, gender, snr, orientation_report,scale,
         print(command)
         run_command(command)
 
-        os.remove(output_tex_filename)
+        os.remove(output_tex_filename)  # comment out to debug LaTeX
         os.remove(output_tex_filename.replace('tex', 'log'))
         os.remove(output_tex_filename.replace('tex', 'aux'))
         os.remove(output_tex_filename.replace('tex', 'out'))
@@ -627,7 +669,7 @@ def save_csv(input_file, age, gender, all_lesions, vol_ice, snr, scale):
                  'Periventricular lesion count', 'Periventricular lesion volume (absolute) cm3', 'Periventricular lesion volume (normalized) %', 'Periventricular lesion burden',
                  'Deep white lesion count', 'Deep white lesion volume (absolute) cm3', 'Deep white lesion volume (normalized) %', 'Deep white lesion burden',
                  'Juxtacortical lesion count', 'Juxtacortical lesion volume (absolute) cm3', 'Juxtacortical lesion volume (normalized) %', 'Juxtacortical lesion burden',
-                 # 'Infratentorial lesion count', 'Infratentorial lesion volume (absolute) cm3', 'Infratentorial lesion volume (normalized) %', 'Infratentorial lesion burden',
+                 'Infratentorial lesion count', 'Infratentorial lesion volume (absolute) cm3', 'Infratentorial lesion volume (normalized) %', 'Infratentorial lesion burden',
                  'Cerebellar lesion count', 'Cerebellar lesion volume (absolute) cm3', 'Cerebellar lesion volume (normalized) %', 'Cerebellar lesion burden',
                  'Medular lesion count', 'Medular lesion volume (absolute) cm3', 'Medular lesion volume (normalized) %', 'Medular lesion burden']
 
@@ -640,7 +682,8 @@ def save_csv(input_file, age, gender, all_lesions, vol_ice, snr, scale):
         row.append(basename)
         row.append(str(gender))
         row.append(str(age))
-        row.append(str(release_date))
+        date = datetime.datetime.now().strftime("%d-%b-%Y")
+        row.append(str(date))
         row.append(str(scale))
         row.append(str(snr))
         # row.extend(str (snr))
