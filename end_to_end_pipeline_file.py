@@ -98,6 +98,11 @@ native_lesion = to_native(mni_lesion_filename, to_mni_affine, native_t1_filename
 
 t6 = time.time()
 
+insert_lesions(native_tissues+'.gz', native_lesion)
+insert_lesions(crisp_filename+'.gz', mni_lesion_filename)
+
+t7 = time.time()
+
 if(not args.no_report):
     age = args.age.lower()
     sex = args.sex.lower()
@@ -108,8 +113,7 @@ os.remove(hemi_fileneame)
 os.remove(all_lesions_filename)
 os.remove(structures_sym_filename)
 
-
-t7 = time.time()
+t8 = time.time()
 
 # Copy README.pdf
 shutil.copyfile("README.pdf", os.path.join(os.path.dirname(mni_t1_filename), "README.pdf"))
@@ -125,13 +129,14 @@ shutil.copyfile(native_flair_filename, os.path.join(os.path.dirname(mni_t1_filen
 # orig_t1_filename = os.path.join(os.path.dirname(mni_t1_filename), os.path.basename(mni_t1_filename).replace("mni_t1_", "original_t1_"))
 # os.remove(orig_t1_filename)
 
-t8 = time.time()
+t9 = time.time()
 print("time preprocess={:.2f}s".format(t1-t0))
 print("time segment={:.2f}s".format(t2-t1))
 print("time toNative={:.2f}s".format(t3-t2))
 print("time gzip={:.2f}s".format(t4-t3))
 print("time lesions={:.2f}s".format(t5-t4))
 print("time lesion native+gzip={:.2f}s".format(t6-t5))
-print("time report={:.2f}s".format(t7-t6))
-print("time previews={:.2f}s".format(t8-t7))
+print("time insert={:.2f}s".format(t7-t6))
+print("time report={:.2f}s".format(t8-t7))
+print("time previews={:.2f}s".format(t9-t8))
 print("TOTAL processing time={:.2f}s".format(t8-t0))

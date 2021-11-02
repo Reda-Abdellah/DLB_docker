@@ -352,22 +352,21 @@ def write_lesions(out, lesion_types_filename, scale, vol_ice, WM_vol):
 
     lesion_number = 1
     all_lesions = []
-    # B TODO : divide by vol_ice ????
     _, seg_num, vol_tot, lesion_burden = compute_lesion_measures((lesion_mask > 0), scale, WM_vol)
     all_lesions.append({'count': seg_num, 'volume_abs': vol_tot, 'volume_rel': vol_tot*100/vol_ice, 'burden': lesion_burden})
     for i in range(1, 4):
         lesion_type = (lesion_mask == i).astype('int')
         seg_labels, seg_num, vol, lesion_burden = compute_lesion_measures((lesion_mask == i), scale, WM_vol)
-        write_lesions_details(out, types[i], seg_labels, seg_num, scale, vol_tot, lesion_number)
+        write_lesions_details(out, types[i], seg_labels, seg_num, scale, vol_ice, lesion_number)
         lesion_number += seg_num
         all_lesions_type = {'count': seg_num, 'volume_abs': vol, 'volume_rel': vol*100/vol_ice, 'burden': lesion_burden}
         all_lesions.append(all_lesions_type)
 
     seg_labelsC, seg_numC, volC, lesion_burdenC = compute_lesion_measures((lesion_mask == 4), scale, WM_vol)  # Cerebellar
     seg_labelsM, seg_numM, volM, lesion_burdenM = compute_lesion_measures((lesion_mask == 5), scale, WM_vol)  # Medular
-    write_lesions_details(out, types[4], seg_labelsC, seg_numC, scale, vol_tot, lesion_number)
+    write_lesions_details(out, types[4], seg_labelsC, seg_numC, scale, vol_ice, lesion_number)
     lesion_number += seg_numC
-    write_lesions_details(out, types[5], seg_labelsM, seg_numM, scale, vol_tot, lesion_number)
+    write_lesions_details(out, types[5], seg_labelsM, seg_numM, scale, vol_ice, lesion_number)
     lesion_number += seg_numM
     # infratentorial
     all_lesions_type = {'count': seg_numC+seg_numM, 'volume_abs': volC+volM, 'volume_rel': (volC+volM)*100/vol_ice, 'burden': lesion_burdenC+lesion_burdenM}
@@ -493,11 +492,11 @@ def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue)
     """
     structures_names = np.array(['Left ventricle', 'Right ventricle', 'Left caudate','Right caudate',
                                     'Left putamen','Right putamen', 'Left thalamus','Right thalamus',
-                                    'Left globus pallidus','Right globus pallidus', 'Left hipocampus','Right hipocampus',
-                                'Left amigdala','Right amigdala', 'Left accumbens', 'Right accumbens'
+                                    'Left globus pallidus','Right globus pallidus', 'Left hippocampus','Right hippocampus',
+                                'Left amygdala','Right amygdala', 'Left accumbens', 'Right accumbens'
                                     ])
     """
-    structures_names = np.array(['Ventricle', 'Caudate', 'Putamen', 'Thalamus','Globus pallidus' ,'Hipocampus','Amigdala', 'Accumbens'])
+    structures_names = np.array(['Lateral ventricles', 'Caudate', 'Putamen', 'Thalamus', 'Globus pallidus', 'Hippocampus', 'Amygdala', 'Accumbens'])
     
     
     for i in range(len(structures_names)):

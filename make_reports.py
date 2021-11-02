@@ -1,7 +1,7 @@
 from report_utils import *
 
 
-def report(input_t1_filename, input_flair_filename, MASK_filename,structures_filename, transform_filename,
+def report(input_t1_filename, input_flair_filename, MASK_filename, structures_filename, transform_filename,
            crisp_filename, lesion_types_filename, age='uknown', sex='uknown'):
     FLAIR_img = nii.load(input_flair_filename)
     MASK_img = nii.load(MASK_filename)
@@ -33,11 +33,17 @@ def report(input_t1_filename, input_flair_filename, MASK_filename,structures_fil
     OUT_HEIGHT = 217
     DEFAULT_ALPHA = 0.5
     colors_lesions = np.array([[0, 0, 0], [255, 255, 0], [0, 255, 255], [255, 0, 255], [88, 41, 0], [249, 228, 183]])
-    colors_tissue = np.array([[0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255]])
+    colors_tissue = np.array([[0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0]])
     colors_ice = np.array([[0, 0, 0], [255, 0, 0]])
-    colors_structures= np.array([[0, 0, 0], [255, 0, 0], [255, 0, 0], [0,255,0], [0,255,0], [0, 0, 255], [0, 0, 255], 
-                                   [255, 255, 0], [255, 255, 0], [255, 0, 255], [255, 0, 255], [0, 255, 255], [0, 255, 255],
-                                   [128, 0, 0], [128, 0, 0], [0, 128, 0], [0, 128, 0] ])
+    colors_structures= np.array([[0, 0, 0],
+                                 [255, 0, 0], [255, 0, 0], #Lateral ventricles
+                                 [0, 0, 255], [0, 0, 255], #Caudate
+                                 [255, 255, 0], [255, 255, 0], #Putamen
+                                 [0, 255, 255], [0, 255, 255], #Thalamus
+                                 [255, 0, 255], [255, 0, 255], #Globus pallidus
+                                 [255, 128, 0], [255, 128, 0], #Hippocampus
+                                 [0, 128, 255], [0, 128, 255], #Amygdala
+                                 [255, 0, 128], [255, 0, 128] ]) #Accumbens
 
     lesion_types = nii.load(lesion_types_filename).get_data()
 

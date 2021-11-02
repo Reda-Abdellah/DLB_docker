@@ -271,3 +271,19 @@ def to_MNI(inputname, outputname, transform_name, reference_name):
     print(str(command))
     run_command(str(command))
     return outputname
+
+
+def insert_lesions(tissues_name, lesions_name):
+    timg = nii.load(tissues_name)
+    tissues = np.asanyarray(timg.dataobj)
+    assert(tissues.dtype == np.uint8)
+    limg = nii.load(lesions_name)
+    lesions = np.asanyarray(limg.dataobj)
+    assert(lesions.dtype == np.uint8)
+    assert(lesions.shape == tissues.shape)
+    lesion_label = np.max(tissues)+1
+    ind = np.where(lesions > 0)
+    tissues[ind] = lesion_label
+    array_img = nii.Nifti1Image(tissues, timg.affine)
+    array_img.set_data_dtype(tissues.dtype)
+    array_img.to_filename(tissues_name)
