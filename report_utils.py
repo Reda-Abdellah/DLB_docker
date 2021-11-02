@@ -516,7 +516,7 @@ def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue)
 
 def plot_img(out, plot_images_filenames):
     #titles = ['FLAIR', 'Intracranial cavity segmentation', 'Tissue segmentation', 'Lesion segmentation']
-    titles = ['FLAIR', 'Structures segmentation', 'Tissue segmentation', 'Lesion segmentation']
+    titles = ['FLAIR', 'Structure segmentation', 'Tissue segmentation', 'Lesion segmentation']
     
     #for i in [1, 2, 0, 3]:
     for i in [2, 1, 0, 3]:
@@ -605,8 +605,8 @@ def save_pdf(input_file, age, gender, snr, orientation_report,scale,
         print('Tissues Segmentation....')
         get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol)
 
-        # structures Segmentation
-        print('structures Segmentation....')
+        # structure Segmentation
+        print('structure Segmentation....')
         get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_structures)
 
 
