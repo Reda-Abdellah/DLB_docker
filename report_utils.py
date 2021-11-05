@@ -215,9 +215,9 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         else:
             y1 = dataset[sex][i]['up']
             y2 = dataset[sex][i]['down']
-        plt.figure(figsize=(20,13))
+        plt.figure(figsize=(20, 13))
         plt.fill_between(np.arange(101), y1, y2, color=['lightgreen'])
-        plt.plot(np.arange(101), (y1+ y2)/2, 'b--', linewidth=3)
+        plt.plot(np.arange(101), (y1 + y2)/2, 'b--', linewidth=3)
         plt.title(structure[i], fontweight='bold')
         plt.xlabel('Age (years)')
         plt.ylabel('Volume (%)')
@@ -454,7 +454,7 @@ def get_image_info(out, orientation_report, scale, snr):
     out.write(Template(' & $o & $sf & $snr\\\\ \n').safe_substitute(o=capitalize(orientation_report), sf="{:5.2f}".format(scale), snr="{:5.2f}".format(snr)))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{30pt}\n').safe_substitute())
+    out.write(Template('\\vspace*{20pt}\n').safe_substitute())
 
 
 def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol):
@@ -542,7 +542,7 @@ def get_tissue_plot(out, filenames_normal_tissue):
     out.write(Template('\\centering \\includegraphics[width=0.25\\textwidth]{$f0} \\includegraphics[width=0.25\\textwidth]{$f1} \\includegraphics[width=0.25\\textwidth]{$f2}\\\\\n').safe_substitute(f0=filenames_normal_tissue[0], f1=filenames_normal_tissue[1], f2=filenames_normal_tissue[2]))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{30pt}\n').safe_substitute())
+    out.write(Template('\\vspace*{20pt}\n').safe_substitute())
 
 
 def write_footnotes(out, display_bounds=False):
@@ -556,104 +556,104 @@ def write_footnotes(out, display_bounds=False):
         # out.write(Template('\\textcolor{blue}{\\footnotesize \\itshape *Result images located in the MNI space (neurological orientation).}\\\\*\n').safe_substitute())
         out.write(Template('\\end{tabularx}\n').safe_substitute())
 
+def write_colors(out):
+    out.write(Template('\\pagestyle{plain}\n').safe_substitute())
+    out.write(Template('\n').safe_substitute())
+    out.write(Template('\\definecolor{volbrain_blue}{RGB}{40,70,96}\n').safe_substitute())
+    out.write(Template('\\definecolor{volbrain_clear_blue}{RGB}{161,185,205}\n').safe_substitute())
+    out.write(Template('\\definecolor{header_blue}{RGB}{73,134,202}\n').safe_substitute())
+    out.write(Template('\\definecolor{header_clear_blue}{RGB}{133,194,255}\n').safe_substitute())
+    out.write(Template('\\definecolor{header_gray}{RGB}{200,200,200}\n').safe_substitute())
+    # out.write(Template('\\definecolor{row_gray}{RGB}{230,230,230}\n').safe_substitute())
+    out.write(Template('\\definecolor{text_white}{RGB}{255,255,255}\n').safe_substitute())
+    out.write(Template('\\definecolor{text_gray}{RGB}{190,190,190}\n').safe_substitute())
+    out.write(Template('\n').safe_substitute())
 
-def save_pdf(input_file, age, gender, snr, orientation_report,scale,
+
+def write_banner(out):
+    out.write(Template('\\hypersetup{colorlinks=true, urlcolor=magenta}').safe_substitute())  # allow to to not have a frame around the image
+    out.write(Template('\n').safe_substitute())
+    out.write(Template('\n').safe_substitute())
+    out.write(Template('\\begin{document}\n').safe_substitute())
+    out.write(Template('\\begin{center}\n').safe_substitute())
+    filename_header = "header.png"
+    out.write(Template('\\href{https://www.volbrain.net}{\\XeTeXLinkBox{ \\includegraphics[width=0.9\\textwidth]{$f}}}\\\\\n').safe_substitute(f=filename_header))
+    # out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X X X X}\n').safe_substitute())
+    # out.write(Template('\\footnotesize \\itshape \\textcolor{NavyBlue}{version $v release $d}\n').safe_substitute(v=version, d=release_date))
+    out.write(Template('{\\footnotesize \\itshape version $v release $d}\n').safe_substitute(v=version, d=release_date))
+    # out.write(Template('\\end{tabularx}\n').safe_substitute())
+    out.write(Template('\\vspace*{20pt}\n').safe_substitute())
+
+
+def save_pdf(input_file, age, gender, snr, orientation_report, scale,
                             vols_tissue, vol_ice, normal_vol, vols_structures,
                             colors_ice, colors_lesions, colors_tissue, colors_structures,
-                            lesion_types_filename, plot_images_filenames, filenames_normal_tissue):
+                            lesion_types_filename, plot_images_filenames, filenames_normal_tissue, no_pdf_report):
     basename = os.path.basename(input_file).replace("mni_", "").replace("t1_", "").replace(".nii.gz", "")
     # output_tex_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".tex").replace("mni", "report")
     output_tex_filename = os.path.join(os.path.dirname(input_file), os.path.basename(input_file).replace("mni_t1_", "report_").replace(".nii.gz", ".tex").replace(".nii", ".tex"))
     print("output_tex_filename=", output_tex_filename)
 
     with open(output_tex_filename, 'w', newline='') as out:
-        load_latex_packages(out)
-        out.write(Template('\\pagestyle{plain}\n').safe_substitute())        
-        out.write(Template('\n').safe_substitute())
-        out.write(Template('\\definecolor{volbrain_blue}{RGB}{40,70,96}\n').safe_substitute())
-        out.write(Template('\\definecolor{volbrain_clear_blue}{RGB}{161,185,205}\n').safe_substitute())
-        out.write(Template('\\definecolor{header_blue}{RGB}{73,134,202}\n').safe_substitute())
-        out.write(Template('\\definecolor{header_clear_blue}{RGB}{133,194,255}\n').safe_substitute())
-        out.write(Template('\\definecolor{header_gray}{RGB}{200,200,200}\n').safe_substitute())
-        # out.write(Template('\\definecolor{row_gray}{RGB}{230,230,230}\n').safe_substitute())
-        out.write(Template('\\definecolor{text_white}{RGB}{255,255,255}\n').safe_substitute())
-        out.write(Template('\\definecolor{text_gray}{RGB}{190,190,190}\n').safe_substitute())
-        out.write(Template('\n').safe_substitute())
 
-        out.write(Template('\\hypersetup{colorlinks=true, urlcolor=magenta}').safe_substitute())  # allow to to not ahve a frame around the image
-        out.write(Template('\n').safe_substitute())
-        out.write(Template('\n').safe_substitute())
-        out.write(Template('\\begin{document}\n').safe_substitute())
-        out.write(Template('\\begin{center}\n').safe_substitute())
-        filename_header = "header.png"
-        out.write(Template('\\href{https://www.volbrain.net}{\\XeTeXLinkBox{ \\includegraphics[width=0.9\\textwidth]{$f}}}\\\\\n').safe_substitute(f=filename_header))
-        # out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X X X X}\n').safe_substitute())
-        # out.write(Template('\\footnotesize \\itshape \\textcolor{NavyBlue}{version $v release $d}\n').safe_substitute(v=version, d=release_date))
-        out.write(Template('{\\footnotesize \\itshape version $v release $d}\n').safe_substitute(v=version, d=release_date))
-        # out.write(Template('\\end{tabularx}\n').safe_substitute())
-        out.write(Template('\\vspace*{20pt}\n').safe_substitute())
+        if not no_pdf_report:
+            load_latex_packages(out)
+            write_colors(out)
+            write_banner(out)
 
-        # Patient information
-        print('Patient information....')
-        get_patient_info(out, basename, gender, age)
+            # Patient information
+            get_patient_info(out, basename, gender, age)
 
-        # Image information
-        print('Image information....')
-        get_image_info(out, orientation_report, scale, snr)
+            # Image information
+            get_image_info(out, orientation_report, scale, snr)
 
-        # Tissues Segmentation
-        print('Tissues Segmentation....')
-        get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol)
+            # Tissues Segmentation
+            get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol)
 
-        # structure Segmentation
-        print('structure Segmentation....')
-        get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_structures)
+            # structure Segmentation
+            get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_structures)
 
+            # Tissue expected volumes
+            get_tissue_plot(out, filenames_normal_tissue)
 
-        # Tissue expected volumes
-        print('Tissue expected volumes....')
-        get_tissue_plot(out, filenames_normal_tissue)
+            # Lesion tables
+            write_lesion_table(out, lesion_types_filename, colors_lesions, scale, vol_ice, WM_vol=vols_tissue[2])
 
-        # Lesion tables
-        print('Lesion tables....')
-        write_lesion_table(out, lesion_types_filename, colors_lesions, scale, vol_ice, WM_vol=vols_tissue[2])
+            out.write(Template('\\vspace*{50pt}\n').safe_substitute())
 
-        out.write(Template('\\vspace*{50pt}\n').safe_substitute())
+            # Footnotes
+            write_footnotes(out, display_bounds=(len(normal_vol) > 0))
+            out.write(Template('\n').safe_substitute())
 
-        # Footnotes
-        write_footnotes(out, display_bounds=(len(normal_vol) > 0))
-        out.write(Template('\n').safe_substitute())
+            out.write(Template('\\vspace*{5pt}\n').safe_substitute())
+            out.write(Template('\n').safe_substitute())
 
-        out.write(Template('\\vspace*{5pt}\n').safe_substitute())
-        out.write(Template('\n').safe_substitute())
+            out.write(Template('\\pagebreak\n').safe_substitute())
 
-        out.write(Template('\\pagebreak\n').safe_substitute())
-
-        # plot images
-        print('plot images....')
-        plot_img(out, plot_images_filenames)
+            # plot images
+            plot_img(out, plot_images_filenames)
 
         # Lesion type tables
-        print('Lesion type tables....')
         all_lesions = write_lesions(out, lesion_types_filename, scale, vol_ice, vols_tissue[2])
 
-        out.write(Template('\\end{center}\n').safe_substitute())
-        out.write(Template('\\end{document}\n').safe_substitute())
-        out.close()
+        if not no_pdf_report:
+            out.write(Template('\\end{center}\n').safe_substitute())
+            out.write(Template('\\end{document}\n').safe_substitute())
+            out.close()
 
-        output_tex_basename = os.path.basename(output_tex_filename)
-        output_tex_dirname = os.path.dirname(output_tex_filename)
-        if not output_tex_dirname:
-            output_tex_dirname = os.getcwd()
-        #command = "xelatex -interaction=nonstopmode -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
-        command = "xelatex -interaction=batchmode -halt-on-error -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
-        print(command)
-        run_command(command)
+            output_tex_basename = os.path.basename(output_tex_filename)
+            output_tex_dirname = os.path.dirname(output_tex_filename)
+            if not output_tex_dirname:
+                output_tex_dirname = os.getcwd()
+            #command = "xelatex -interaction=nonstopmode -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
+            command = "xelatex -interaction=batchmode -halt-on-error -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
+            print(command)
+            run_command(command)
 
-        os.remove(output_tex_filename)  # comment out to debug LaTeX
-        os.remove(output_tex_filename.replace('tex', 'log'))
-        os.remove(output_tex_filename.replace('tex', 'aux'))
-        os.remove(output_tex_filename.replace('tex', 'out'))
+            os.remove(output_tex_filename)  # comment out to debug LaTeX
+            os.remove(output_tex_filename.replace('tex', 'log'))
+            os.remove(output_tex_filename.replace('tex', 'aux'))
+            os.remove(output_tex_filename.replace('tex', 'out'))
 
         return all_lesions
 
