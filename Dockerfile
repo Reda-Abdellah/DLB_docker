@@ -15,6 +15,7 @@ RUN curl -LO http://ssd.mathworks.com/supportfiles/downloads/R2017b/deployment_f
     rm -rf MCR
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBCONF_NONINTERACTIVE_SEEN=true
+RUN mkdir -p /opt/deeplesionbrain
 WORKDIR /opt/deeplesionbrain
 ENV LD_LIBRARY_PATH=/usr/local/MATLAB/MATLAB_Runtime/v93/runtime/glnxa64:/usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64:/usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64:/usr/local/MATLAB/MATLAB_Runtime/v93/sys/opengl/lib/glnxa64:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 ENV XAPPLRESDIR=/usr/local/MATLAB/MATLAB_Runtime/v93/X11/app-defaults
@@ -52,7 +53,8 @@ COPY trained_all_second_step_iqda/ /Weights/
 #RUN chmod 777 -R /opt/deeplesionbrain/*
 #RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
 #RUN mv DLB_docker/* /opt/deeplesionbrain
-COPY *.py *.png *.pkl *.md README.pdf /opt/deeplesionbrain/
+#COPY *.py *.png *.pkl *.md /opt/deeplesionbrain/
+COPY end_to_end_pipeline_file.py end_to_end_pipeline.py make_reports.py modelos.py prediction.py preprocessing.py report_utils.py utils.py header.png normal_crisp_volume_by_age.pkl README.pdf /opt/deeplesionbrain/
 RUN mkdir /data/
 RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/libmwcoder_types.so* /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude/
 RUN apt -qqy install libatk1.0-0
