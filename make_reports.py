@@ -2,15 +2,22 @@ from report_utils import *
 
 #B:TODO: input_root_dir="", global_csv=False, global_csv_filename=""
 def report(input_t1_filename, input_flair_filename, MASK_filename, structures_filename, transform_filename,
-           crisp_filename, lesion_types_filename, age='uknown', sex='uknown', no_pdf_report=False):
+           crisp_filename, lesion_types_filename, bounds_df, age='Unknown', sex='Unknown', no_pdf_report=False):
     FLAIR_img = nii.load(input_flair_filename)
     MASK_img = nii.load(MASK_filename)
     # LAB_img = nii.load(LAB_filename)
     # LAB = LAB_img.get_fdata()
     # # LAB_img = MASK_img
 
-    age = age.lower()
     sex = sex.lower()
+
+    if (age != "Unknown"):
+        try:
+            age = float(age)
+        except ValueError:
+            print("WARNING: invalid value specified for age: {}".format(age))
+            age = "Unknown"
+
 
     info_filename = os.path.join(os.path.dirname(input_t1_filename), os.path.basename(input_t1_filename).replace("mni_t1_", "img_info_").replace(".nii.gz", ".txt"))
     snr, scale, orientation_report = read_info_file(info_filename)
@@ -100,10 +107,12 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, structures_fi
 
     filenames_normal_tissue, normal_vol = get_expected_volumes(age, sex, vols_tissue, vol_ice)
 
-    all_lesions = save_pdf(input_t1_filename, age, sex, snr, orientation_report,scale,
-                            vols_tissue, vol_ice, normal_vol, vols_structures,
-                            colors_ice, colors_lesions, colors_tissue, colors_structures,
-                            lesion_types_filename, plot_images_filenames, filenames_normal_tissue, no_pdf_report)
+    all_lesions = save_pdf(input_t1_filename, age, sex, snr, orientation_report, scale,
+                           bounds_df, 
+                           vols_tissue, vol_ice, normal_vol, vols_structures,
+                           colors_ice, colors_lesions, colors_tissue, colors_structures,
+                           lesion_types_filename, plot_images_filenames,
+                           filenames_normal_tissue, no_pdf_report)
 
     save_csv(input_t1_filename, age, sex, all_lesions, vol_ice, snr, scale)
 

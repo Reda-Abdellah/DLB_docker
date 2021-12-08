@@ -20,12 +20,12 @@ def preprocess_folder(in_folder_path, T1Keyword="T1", FLAIRKeyword='FLAIR'):  # 
         nativeFLAIR_name = nativeFLAIR_name.replace('.gz', '')
         if('.gz' in FLAIR):
             copyfile(FLAIR, nativeFLAIR_name + '.gz')
-            run_command('gunzip ' + nativeFLAIR_name + '.gz')
+            run_command('gunzip ' + stringify(nativeFLAIR_name + '.gz'))
         else:
             copyfile(FLAIR, nativeFLAIR_name)
         if('.gz' in T1):
             copyfile(T1, nativeT1_name + '.gz')
-            run_command('gunzip ' + nativeT1_name + '.gz')
+            run_command('gunzip ' + stringify(nativeT1_name + '.gz'))
         else:
             copyfile(T1, nativeT1_name)
         newT1, newFLAIR, new_mask, new_intot1, new_affine = preprocess_file(nativeT1_name, nativeFLAIR_name)
@@ -38,6 +38,16 @@ def preprocess_folder(in_folder_path, T1Keyword="T1", FLAIRKeyword='FLAIR'):  # 
 
 
 def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives absolute path
+
+    print('processing: ' + nativeT1_name + ' and ' + nativeFLAIR_name)
+    matlabBin = './lesionBrain_v11_fullpreprocessing_exe.sh'
+    #command = matlabBin + ' ' + stringify(nativeT1_name) + ' ' + stringify(nativeFLAIR_name)
+    command = "{} {} {}".format(matlabBin, stringify(nativeT1_name), stringify(nativeFLAIR_name))
+    print("command=", command)
+    run_command(command)
+
+    # Rename produced files
+
     dirname = os.path.dirname(nativeT1_name)
     assert(dirname == os.path.dirname(nativeFLAIR_name))
     T1_name = os.path.basename(nativeT1_name)
@@ -61,14 +71,7 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives ab
     newCrisp = os.path.join(output_dir, 'mni_tissues_' + T1_name)
     newHemi = os.path.join(output_dir, 'mni_hemi_' + T1_name)  # B:TODO:useless ???
     newStructures = os.path.join(output_dir, 'mni_structures_sym_' + T1_name)  # B:TODO:useless ???
-
-
-    print('processing: ' + nativeT1_name + ' and ' + nativeFLAIR_name)
-    bin = './lesionBrain_v11_fullpreprocessing_exe'
-    command = bin + ' ' + nativeT1_name + ' ' + nativeFLAIR_name
-    #run_command(command)
-    run_command(command)
-
+    
     assert os.path.isfile(outT1)
     assert os.path.isfile(outFLAIR)
 

@@ -13,7 +13,9 @@ from skimage.measure import label
 from matplotlib import pyplot as plt
 import numpy as np
 import pickle
-from utils import run_command
+from utils import run_command, stringify
+import pandas as pd
+import math
 
 OUT_HEIGHT = 217
 DEFAULT_ALPHA = 0.5
@@ -223,7 +225,14 @@ def get_expected_volumes(age, sex, tissue_vol, vol_ice):
         plt.ylabel('Volume (%)')
         if(not age == 'unknown'):
             plt.scatter([int(age)], [int(100*tissue_vol[tissue_vol_indices[i]]/vol_ice)], s=300, c='red')
-            normal_vol.append([y2[int(age)], y1[int(age)]])
+            #normal_vol.append([y2[int(age)], y1[int(age)]])
+            age_inf = math.floor(age)
+            age_sup = math.ceil(age)
+            lower_bound = np.interp(age, [age_inf, age_sup], [y2[age_inf], y2[age_sup]])
+            upper_bound = np.interp(age, [age_inf, age_sup], [y1[age_inf], y1[age_sup]])
+            normal_vol.append([lower_bound, upper_bound])
+            print(structure[i], "[", lower_bound, ",", upper_bound, "] instead of [", y2[int(age)], ",", y1[int(age)],"]")
+
         plt.savefig(filenames[i], dpi=300, bbox_inches = 'tight', pad_inches=0.1)
         plt.clf()
     return filenames, normal_vol
@@ -389,6 +398,7 @@ def write_lesion_table(out, lesion_types_filename, colors_lesions, scale, vol_ic
     out.write(Template(' \\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Lesion} } & {\\bfseries \\textcolor{text_white}{Count}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)} } & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)} } & {\\bfseries \\textcolor{text_white}{Lesion burden} }\\\\\n').safe_substitute())
     _, seg_num_tot, vol_tot, lesion_burden = compute_lesion_measures((lesion_mask > 0), scale, WM_vol)
     out.write(Template(getRowColor(0)+'Total Lesions & $g & $a & $d & $b\\\\ \n').safe_substitute(g=seg_num_tot, a="{:5.4f}".format(vol_tot), d="{:5.4f}".format(vol_tot*100/vol_ice), b="{:5.4f}".format(lesion_burden)))
+    out.write(Template('\\hline\n').safe_substitute())
     for i in range(1, 4):
         _, seg_num, vol, lesion_burden = compute_lesion_measures((lesion_mask == i), scale, WM_vol)
         out.write(Template(getRowColor(i)+'$p & $g & $a & $d & $b\\\\ \n').safe_substitute(p=types[i], g=seg_num, a="{:5.4f}".format(vol), d="{:5.4f}".format(vol*100/vol_ice), b="{:5.4f}".format(lesion_burden)))
@@ -454,10 +464,10 @@ def get_image_info(out, orientation_report, scale, snr):
     out.write(Template(' & $o & $sf & $snr\\\\ \n').safe_substitute(o=capitalize(orientation_report), sf="{:5.2f}".format(scale), snr="{:5.2f}".format(snr)))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{20pt}\n').safe_substitute())
+    out.write(Template('\\vspace*{10pt}\n').safe_substitute())
 
 
-def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol):
+def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol, bounds_df):
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c}\n').safe_substitute())
     out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Tissues}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}}  \\\\\n').safe_substitute())
 
@@ -483,12 +493,131 @@ def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_
     out.write(Template('\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{10pt}\n').safe_substitute())
+    out.write(Template('\\vspace*{3pt}\n').safe_substitute())
 
 
-def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue):
-    out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c}\n').safe_substitute())
-    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Structures}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}} & {\\bfseries \\textcolor{text_white}{Left (Right) struct. vol. (\%)}}  \\\\\n').safe_substitute())
+AGE_MIN=1
+AGE_MAX=101
+
+# To call only once when processing several files 
+def read_bounds(sex):
+    col_names=['structure'] + [f'age_{i}_{suffixe}' for i in range(AGE_MIN, AGE_MAX+1) for suffixe in ['lower', 'upper']]
+    sex = sex.lower()
+    if (sex == "female"):
+        return pd.read_csv("female_vb_bounds.csv", sep=";", names=col_names)
+    elif (sex == "male"):
+         return pd.read_csv("male_vb_bounds.csv", sep=";", names=col_names)
+    else:
+        return pd.DataFrame({'A' : []}) # empty DataFrame
+
+
+#TODO: for each patient with age & sex
+structures_names = np.array(['Lateral ventricles', 'Caudate', 'Putamen', 'Thalamus', 'Globus pallidus', 'Hippocampus', 'Amygdala', 'Accumbens'])
+tissues_names = np.array(['Intracranial Cavity (IC)', 'White matter (including lesions)', 'Grey matter', 'Cerebrospinal fluid'])
+
+def get_tissue_names_in_bound_csv(name):
+    if (name == 'Intracranial Cavity (IC)'):
+        name = 'Tissue IC cm3'
+    elif (name == 'White matter (including lesions)'):
+        name = 'Tissue WM cm3'
+    elif (name == 'Grey matter'):
+        name = 'Tissue GM cm3'
+    elif (name == 'Cerebrospinal fluid'):
+        name = 'Tissue CSF cm3'
+    return name
+    
+def get_structure_names_in_bound_csv(name):
+    return [f"{name} Total cm3", f"{name} Right cm3", f"{name} Left cm3", f"{name} Asymmetry"]
+
+
+def compute_vol_bounds(age, bounds_df):
+    def get_bounds(name, age, df):
+        assert isinstance(age, int)
+        filtered_data = df[df.structure == name]
+        #assert len(filtered_data) == 1, name_in_df
+        return filtered_data[[f"age_{age}_lower", f"age_{age}_upper"]].iloc[0]
+
+    def clamp(row):
+        if not "Asymmetry" in row["structure"]:
+            return max(0, row["lower_bound"])
+        else:
+            return row["lower_bound"]
+    
+    def compute_bounds(age, bounds_df):
+        out = pd.DataFrame(bounds_df["structure"])
+        #print("out\n", out)
+    
+        age = max(min(age, AGE_MAX), AGE_MIN)
+        age_inf = math.floor(age)
+        age_sup = math.ceil(age)
+        out[[f"age_{age_inf}_lower", f"age_{age_inf}_upper"]] = out.apply(lambda x: get_bounds(x.structure, age_inf, bounds_df), axis=1) #
+        if age_inf < age_sup:
+            out[[f"age_{age_sup}_lower", f"age_{age_sup}_upper"]] = out.apply(lambda x: get_bounds(x.structure, age_sup, bounds_df), axis=1) #, axis=1
+        
+        out["lower_bound"] = out.apply(lambda x: np.interp(age, [age_inf, age_sup], [x[f"age_{age_inf}_lower"], x[f"age_{age_sup}_lower"]]), axis=1)
+        out["upper_bound"] = out.apply(lambda x: np.interp(age, [age_inf, age_sup], [x[f"age_{age_inf}_upper"], x[f"age_{age_sup}_upper"]]), axis=1)
+
+        out = out[["structure", "lower_bound", "upper_bound"]]
+        # print("out=\n", out)
+        # out["lower_bound"] = out.apply(lambda row: clamp(row), axis=1)  #already done in csv
+        # print("out=\n", out)
+        
+        return out
+
+    return compute_bounds(age, bounds_df)
+
+
+def compute_all(right_vol, left_vol, vol_ice):
+    assert(vol_ice > 0)
+    vol_total = right_vol+left_vol
+    right_percentage = 100*right_vol/vol_ice
+    left_percentage = 100*left_vol/vol_ice
+    total_percentage = right_percentage+left_percentage  # 100*vol_total/vol_ice
+    asymmetry = 100*(right_vol - left_vol) / ((right_vol + left_vol)*0.5)   #TODO: wrong formula ??? should be: 100*(right_vol - left_vol) / (right_vol + left_vol)
+    return vol_total, right_percentage, left_percentage, total_percentage, asymmetry
+
+
+def getColorByBound(p, low, up):
+    assert(low <= up)
+    if (p < low or p > up):
+        return "\\textcolor{Maroon}"
+    else:
+        return "\\textcolor{black}"
+
+
+def getBoundsSym(name, tp, rp, lp, a, vol_ice, bounds_df):
+    names_csv = get_structure_names_in_bound_csv(name)
+    print("name=", name)
+    print("names_csv[0]=", names_csv[0])
+    print("names_csv[1]=", names_csv[1])
+    print("names_csv[2]=", names_csv[2])
+    print("names_csv[3]=", names_csv[3])
+    print("{}".format(bounds_df[bounds_df["structure"] == names_csv[0]]))
+    print("{}".format(bounds_df[bounds_df["structure"] == names_csv[1]]))
+    print("{}".format(bounds_df[bounds_df["structure"] == names_csv[2]]))
+    print("{}".format(bounds_df[bounds_df["structure"] == names_csv[3]]))
+    tp_low = (bounds_df[bounds_df["structure"] == names_csv[0]]).lower_bound.iloc[0]
+    tp_up = (bounds_df[bounds_df["structure"] == names_csv[0]]).upper_bound.iloc[0]
+    rp_low = (bounds_df[bounds_df["structure"] == names_csv[1]]).lower_bound.iloc[0]
+    rp_up = (bounds_df[bounds_df["structure"] == names_csv[1]]).upper_bound.iloc[0]
+    lp_low = (bounds_df[bounds_df["structure"] == names_csv[2]]).lower_bound.iloc[0]
+    lp_up = (bounds_df[bounds_df["structure"] == names_csv[2]]).upper_bound.iloc[0]
+    a_low = (bounds_df[bounds_df["structure"] == names_csv[3]]).lower_bound.iloc[0]
+    a_up = (bounds_df[bounds_df["structure"] == names_csv[3]]).upper_bound.iloc[0]
+    #asymmetry bounds are normalized (like the rest of the measures) with 100/vol_ice in the Matlab code
+    #We have to de-normalize them.
+    #a_low *= vol_ice/100
+    #a_up *= vol_ice/100
+    tp_color = getColorByBound(tp, tp_low, tp_up)
+    rp_color = getColorByBound(rp, rp_low, rp_up)
+    lp_color = getColorByBound(lp, lp_low, lp_up)
+    a_color =  getColorByBound(a, a_low, a_up)
+    return tp_low, tp_up, tp_color, rp_low, rp_up, rp_color, lp_low, lp_up, lp_color, a_low, a_up, a_color
+
+
+def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue, bounds_df):
+    out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c c}\n').safe_substitute())
+    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Structure}} & {\\bfseries \\textcolor{text_white}{Total ($cm^{3}$ / \\%)}} & {\\bfseries \\textcolor{text_white}{Right ($cm^{3}$ / \\%)}} & {\\bfseries \\textcolor{text_white}{Left ($cm^{3}$ / \\%)}} & {\\bfseries \\textcolor{text_white}{Asymmetry (\\%)}}  \\\\\n').safe_substitute())
     """
     structures_names = np.array(['Left ventricle', 'Right ventricle', 'Left caudate','Right caudate',
                                     'Left putamen','Right putamen', 'Left thalamus','Right thalamus',
@@ -497,21 +626,32 @@ def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue)
                                     ])
     """
     structures_names = np.array(['Lateral ventricles', 'Caudate', 'Putamen', 'Thalamus', 'Globus pallidus', 'Hippocampus', 'Amygdala', 'Accumbens'])
-    
+
     
     for i in range(len(structures_names)):
-        row_color = getRowColor(i)
+        rowColor = getRowColor(i)
         n = structures_names[i]
-        v = vols_structures[i*2]+vols_structures[i*2+1]
-        left = 100*vols_structures[i*2]/v
-        p = 100*v/vol_ice
-        out.write(Template(row_color+'$n & $v & $p & $left ($right) \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), left="{:5.2f}".format(left), right="{:5.2f}".format(100-left)  ) )
+        l = vols_structures[i*2]
+        r = vols_structures[i*2+1]
+        t, rp, lp, tp, a = compute_all(r, l, vol_ice)
+
+        if (bounds_df.empty):
+            out.write(Template('$rc $n & $t / $tp & $r / $rp & $l / $lp & $a \\\\\n').safe_substitute(rc=rowColor, n=n, t="{:5.2f}".format(t), tp="{:5.3f}".format(tp), r="{:5.2f}".format(rv), rp="{:5.3f}".format(rp), l="{:5.2f}".format(lv), lp="{:5.3f}".format(lp), a="{:5.4f}".format(a)))
+        else:
+            tp_low, tp_up, tp_color, rp_low, rp_up, rp_color, lp_low, lp_up, lp_color, a_low, a_up, a_color = getBoundsSym(n, tp, rp, lp, a, vol_ice, bounds_df)
+            out.write(Template('$rc $n & $tp_c{$t / $tp} & $rp_c{$r / $rp} & $lp_c{$l / $lp} & $a_c{$a} \\\\\n').safe_substitute(rc=rowColor, n=n, tp_c=tp_color, t="{:5.2f}".format(t), tp="{:5.3f}".format(tp), rp_c=rp_color, r="{:5.2f}".format(r), rp="{:5.3f}".format(rp), lp_c=lp_color, l="{:5.2f}".format(l), lp="{:5.3f}".format(lp), a_c=a_color, a="{:5.4f}".format(a)))
+            out.write(Template('$rc & \\scriptsize $tp_c{[$tp_low, $tp_up]} & \\scriptsize $rp_c{[$rp_low, $rp_up]} & \\scriptsize $lp_c{[$lp_low, $lp_up]} & \\scriptsize $a_c{[$a_low, $a_up]} \\\\\n').safe_substitute(rc=rowColor, tp_c=tp_color, tp_low="{:5.3f}".format(tp_low), tp_up="{:5.3f}".format(tp_up), rp_c=rp_color, rp_low="{:5.3f}".format(rp_low), rp_up="{:5.3f}".format(rp_up), lp_c=lp_color, lp_low="{:5.3f}".format(lp_low), lp_up="{:5.3f}".format(lp_up), a_c=a_color, a_low="{:5.3f}".format(a_low), a_up="{:5.3f}".format(a_up)))
+            
+        # t = l+r
+        # left = 100*vols_structures[i*2]/v
+        # p = 100*v/vol_ice
+        # out.write(Template(row_color+'$n & $v & $p & $left ($right) \\\\\n').safe_substitute(n=n, v="{:5.2f}".format(v), p="{:5.2f}".format(p), left="{:5.2f}".format(left), right="{:5.2f}".format(100-left)  ) )
         
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{10pt}\n').safe_substitute())
+    out.write(Template('\\vspace*{5pt}\n').safe_substitute())
 
 
 def plot_img(out, plot_images_filenames):
@@ -532,17 +672,19 @@ def plot_img(out, plot_images_filenames):
 
 
 def get_tissue_plot(out, filenames_normal_tissue):
-    out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
-    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$v}} \\\\\n').safe_substitute(v='Tissue expected volumes'))
-    out.write(Template('\\end{tabularx}\n').safe_substitute())
-    out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{5pt}\n').safe_substitute())
+    #out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
+    # out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$v}} \\\\\n').safe_substitute(v='Tissue expected volumes'))
+    #out.write(Template('\\end{tabularx}\n').safe_substitute())
+    #out.write(Template('\n').safe_substitute())
+    #out.write(Template('\\vspace*{2pt}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\begin{tabularx}{0.8\\textwidth}{X}\n').safe_substitute())
     out.write(Template('\\centering \\includegraphics[width=0.25\\textwidth]{$f0} \\includegraphics[width=0.25\\textwidth]{$f1} \\includegraphics[width=0.25\\textwidth]{$f2}\\\\\n').safe_substitute(f0=filenames_normal_tissue[0], f1=filenames_normal_tissue[1], f2=filenames_normal_tissue[2]))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
-    out.write(Template('\\vspace*{20pt}\n').safe_substitute())
+    out.write(Template('\\vspace*{1pt}\n').safe_substitute())
+
+
 
 
 def write_footnotes(out, display_bounds=False):
@@ -554,6 +696,12 @@ def write_footnotes(out, display_bounds=False):
         out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape Lesion burden is calculated as the lesion volume divided by the white matter volume.}\\\\*\n').safe_substitute())
         out.write(Template('\\textcolor{text_gray}{\\footnotesize \\itshape All the result images are located in the MNI space (neurological orientation).}\\\\*\n').safe_substitute())
         # out.write(Template('\\textcolor{blue}{\\footnotesize \\itshape *Result images located in the MNI space (neurological orientation).}\\\\*\n').safe_substitute())
+
+        title="DeepLesionBrain: Towards a broader deep-learning generalization for multiple sclerosis lesion segmentation"
+        authors="Reda Abdellah Kamraoui, Vinh-Thong Ta, Thomas Tourdias, Boris Mansencal, José V Manjon, Pierrick Coupé"
+        where="Medical Image Analysis, volume 76, February 2022.~\\href{https://www.sciencedirect.com/science/article/pii/S1361841521003571}{PDF}"
+        out.write(Template('{[}$r{]} $a, \\textit{$t}, $w\\\\\n').safe_substitute(r="1", a=authors, t=title, w=where))
+
         out.write(Template('\\end{tabularx}\n').safe_substitute())
 
 def write_colors(out):
@@ -582,13 +730,15 @@ def write_banner(out):
     # out.write(Template('\\footnotesize \\itshape \\textcolor{NavyBlue}{version $v release $d}\n').safe_substitute(v=version, d=release_date))
     out.write(Template('{\\footnotesize \\itshape version $v release $d}\n').safe_substitute(v=version, d=release_date))
     # out.write(Template('\\end{tabularx}\n').safe_substitute())
-    out.write(Template('\\vspace*{20pt}\n').safe_substitute())
+    out.write(Template('\\vspace*{10pt}\n').safe_substitute())
 
 
 def save_pdf(input_file, age, gender, snr, orientation_report, scale,
-                            vols_tissue, vol_ice, normal_vol, vols_structures,
-                            colors_ice, colors_lesions, colors_tissue, colors_structures,
-                            lesion_types_filename, plot_images_filenames, filenames_normal_tissue, no_pdf_report):
+             bounds_df,
+             vols_tissue, vol_ice, normal_vol, vols_structures,
+             colors_ice, colors_lesions, colors_tissue, colors_structures,
+             lesion_types_filename, plot_images_filenames, filenames_normal_tissue,
+             no_pdf_report):
     basename = os.path.basename(input_file).replace("mni_", "").replace("t1_", "").replace(".nii.gz", "")
     # output_tex_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".tex").replace("mni", "report")
     output_tex_filename = os.path.join(os.path.dirname(input_file), os.path.basename(input_file).replace("mni_t1_", "report_").replace(".nii.gz", ".tex").replace(".nii", ".tex"))
@@ -601,6 +751,9 @@ def save_pdf(input_file, age, gender, snr, orientation_report, scale,
             write_colors(out)
             write_banner(out)
 
+            if not bounds_df.empty:
+                bounds_df = compute_vol_bounds(age, bounds_df)
+            
             # Patient information
             get_patient_info(out, basename, gender, age)
 
@@ -608,25 +761,28 @@ def save_pdf(input_file, age, gender, snr, orientation_report, scale,
             get_image_info(out, orientation_report, scale, snr)
 
             # Tissues Segmentation
-            get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol)
-
-            # structure Segmentation
-            get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_structures)
+            get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, normal_vol, bounds_df)
 
             # Tissue expected volumes
             get_tissue_plot(out, filenames_normal_tissue)
 
+            # structure Segmentation
+            get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_structures, bounds_df)
+
             # Lesion tables
             write_lesion_table(out, lesion_types_filename, colors_lesions, scale, vol_ice, WM_vol=vols_tissue[2])
 
-            out.write(Template('\\vspace*{50pt}\n').safe_substitute())
-
+            if (bounds_df.empty):
+                out.write(Template('\\vspace*{30pt}\n').safe_substitute())
+            else:
+                out.write(Template('\\vspace*{8pt}\n').safe_substitute())
+                
             # Footnotes
             write_footnotes(out, display_bounds=(len(normal_vol) > 0))
             out.write(Template('\n').safe_substitute())
 
-            out.write(Template('\\vspace*{5pt}\n').safe_substitute())
-            out.write(Template('\n').safe_substitute())
+            # out.write(Template('\\vspace*{5pt}\n').safe_substitute())
+            # out.write(Template('\n').safe_substitute())
 
             out.write(Template('\\pagebreak\n').safe_substitute())
 
@@ -646,14 +802,14 @@ def save_pdf(input_file, age, gender, snr, orientation_report, scale,
             if not output_tex_dirname:
                 output_tex_dirname = os.getcwd()
             #command = "xelatex -interaction=nonstopmode -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
-            command = "xelatex -interaction=batchmode -halt-on-error -output-directory={} {}".format(output_tex_dirname, output_tex_basename)
+            command = "xelatex -interaction=batchmode -halt-on-error -output-directory={} {}".format(stringify(output_tex_dirname), stringify(output_tex_basename))
             print(command)
             run_command(command)
 
-            os.remove(output_tex_filename)  # comment out to debug LaTeX
-            os.remove(output_tex_filename.replace('tex', 'log'))
-            os.remove(output_tex_filename.replace('tex', 'aux'))
-            os.remove(output_tex_filename.replace('tex', 'out'))
+            # os.remove(output_tex_filename)  # comment out to debug LaTeX
+            # os.remove(output_tex_filename.replace('tex', 'log'))
+            # os.remove(output_tex_filename.replace('tex', 'aux'))
+            # os.remove(output_tex_filename.replace('tex', 'out'))
 
         return all_lesions
 

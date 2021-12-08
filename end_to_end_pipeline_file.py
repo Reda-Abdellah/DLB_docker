@@ -25,37 +25,56 @@ native_t1_filename = args.T1_filename
 native_flair_filename = args.FLAIR_filename
 output_dir = os.path.dirname(args.T1_filename)
 
-def process_files(native_t1_filename, native_flair_filename, output_dir,
-                  age, sex, no_pdf_report=False, platform=True):
-    tmp_t1_filename = os.path.join(os.path.dirname(native_t1_filename), os.path.basename(native_t1_filename).replace(".nii.gz", ".nii"))
-    tmp_flair_filename = os.path.join(os.path.dirname(native_t1_filename), os.path.basename(native_flair_filename).replace(".nii.gz", ".nii"))
+#DEBUG
+print("native_t1_filename=", native_t1_filename)
+print("native_flair_filename=", native_flair_filename)
 
+
+def process_files(native_t1_filename, native_flair_filename, output_dir,
+                  age, sex, bound_df, no_pdf_report=False, platform=True):
+
+    #Matlab code does not support gzipped files and spaces in filenames
+    
+    tmp_t1_filename = os.path.join(output_dir, os.path.basename(native_t1_filename).replace(" ", "_"))
+    tmp_flair_filename = os.path.join(output_dir, os.path.basename(native_flair_filename).replace(" ", "_"))
+
+    #DEBUG
+    print("tmp_t1_filename=", tmp_t1_filename)
+    print("tmp_flair_filename=", tmp_flair_filename)
+    
     if(native_t1_filename.endswith('.gz')):
+        tmp_t1_filename = tmp_t1_filename[:-3]
         assert(native_t1_filename != tmp_t1_filename)
-        run_command('gunzip -c {} > {}'.format(native_t1_filename, tmp_t1_filename))
-    # else:
-    #     shutil.copyfile(native_t1_filename, tmp_t1_filename)
+        command = 'gunzip -c {} > {}'.format(stringify(native_t1_filename), stringify(tmp_t1_filename))
+        print("command=", command)
+        run_command(command)
+    elif (tmp_t1_filename != native_t1_filename):
+        shutil.copyfile(native_t1_filename, tmp_t1_filename)
 
     if(native_flair_filename.endswith('.gz')):
+        tmp_flair_filename = tmp_flair_filename[:-3]
         assert(native_flair_filename != tmp_flair_filename)
         # shutil.copyfile(native_flair_filename, tmp_flair_filename+'.gz')
-        run_command('gunzip -c {} > {}'.format(native_flair_filename, tmp_flair_filename))
-    # else:
-    #     shutil.copyfile(native_flair_filename, tmp_flair_filename)
+        command = 'gunzip -c {} > {}'.format(stringify(native_flair_filename), stringify(tmp_flair_filename))
+        print("command=", command)
+        run_command(command)
+    elif (tmp_flair_filename != native_flair_filename):
+        shutil.copyfile(native_flair_filename, tmp_flair_filename)
 
 
     t0 = time.time()
     mni_t1_filename, mni_flair_filename, mni_mask_filename, intot1, to_mni_affine, crisp_filename, hemi_fileneame, structures_sym_filename = preprocess_file(tmp_t1_filename, tmp_flair_filename, output_dir)
 
+    run_command("ls {}".format(output_dir)) #DEBUG
 
     # compress input files if necessary
     if(native_t1_filename.endswith('.gz')):
         os.remove(tmp_t1_filename)
-        # run_command('gzip -9 -f {}'.format(native_t1_filename))
+        # run_command('gzip -9 -f {}'.format(stringify(native_t1_filename)))
         # native_t1_filename = native_t1_filename+'.gz'
     if(native_flair_filename.endswith('.gz')):
         os.remove(tmp_flair_filename)
-        # run_command('gzip -9 -f {}'.format(native_flair_filename))
+        # run_command('gzip -9 -f {}'.format(stringify(native_flair_filename)))
         # native_flair_filename = native_flair_filename+'.gz'
 
 
@@ -73,39 +92,43 @@ def process_files(native_t1_filename, native_flair_filename, output_dir,
     # to_MNI(native_t1_filename, unfiltred_t1_filename, native_t1_filename, mni_t1_filename)
     t3 = time.time()
 
-    run_command('gzip -f -9 '+mni_mask_filename)
-    run_command('gzip -f -9 '+mni_flair_filename)
-    run_command('gzip -f -9 '+mni_t1_filename)
-    # run_command('gzip -f -9 '+mni_lesions_filename)
-    # ##run_command('gzip -f -9 '+nativeFLAIR_filename)
-    # ##run_command('gzip -f -9 '+native_t1_filename)
-    run_command('gzip -f -9 '+native_mask)
-    run_command('gzip -f -9 '+native_tissues)
-    run_command('gzip -f -9 '+crisp_filename)  # mni_tissues
-    # run_command('gzip -f -9 '+hemi_fileneame)  # B:useless
-    # run_command('gzip -f -9 '+structures_filename)  # B:useless
+    run_command('gzip -f -9 '+stringify(mni_mask_filename))
+    run_command('gzip -f -9 '+stringify(mni_flair_filename))
+    run_command('gzip -f -9 '+stringify(mni_t1_filename))
+    # run_command('gzip -f -9 '+stringify(mni_lesions_filename))
+    # ##run_command('gzip -f -9 '+stringify(nativeFLAIR_filename))
+    # ##run_command('gzip -f -9 '+stringify(native_t1_filename))
+    run_command('gzip -f -9 '+stringify(native_mask))
+    run_command('gzip -f -9 '+stringify(native_tissues))
+    run_command('gzip -f -9 '+stringify(crisp_filename))  # mni_tissues
+    # run_command('gzip -f -9 '+stringify(hemi_fileneame))  # B:useless
+    # run_command('gzip -f -9 '+stringify(structures_filename))  # B:useless
     t4 = time.time()
 
     mni_lesion_filename = get_lesion_by_regions(mni_t1_filename+'.gz', crisp_filename+'.gz', hemi_fileneame, structures_sym_filename, all_lesions_filename)
     structures_filename = get_structures(hemi_fileneame, structures_sym_filename)
     # mni_lesion_filename is already gzipped (as passed mni_t1 was)
+
+    #B:TODO: set structures to 0 where lesion !!!!!!!!!!!!!
     t5 = time.time()
 
     native_lesion = to_native(mni_lesion_filename, to_mni_affine, native_t1_filename.replace(".nii.gz", ".nii")+'.gz', dtype='uint8')
-    # run_command('gzip -f -9 '+mni_lesion_filename)
+    # run_command('gzip -f -9 '+stringify(mni_lesion_filename))
     # print("native_lesion=", native_lesion)
-    # run_command('gzip -f -9 '+native_lesion)
+    # run_command('gzip -f -9 '+stringify(native_lesion))
     # B:TODO: comme on travaill sur des fichiers compressés, ça produit des fichiers compressés : mais on pourrait les compresser plus ????
 
     t6 = time.time()
 
     insert_lesions(native_tissues+'.gz', native_lesion)
     insert_lesions(crisp_filename+'.gz', mni_lesion_filename)
-
+    
+    remove_lesions(structures_filename, mni_lesion_filename)
+    
     t7 = time.time()
 
     report(mni_t1_filename+'.gz', mni_flair_filename+'.gz', mni_mask_filename+'.gz', structures_filename,  # all_lesions_filename+'.gz',
-           to_mni_affine, crisp_filename+'.gz', mni_lesion_filename, age, sex, no_pdf_report)
+           to_mni_affine, crisp_filename+'.gz', mni_lesion_filename, bounds_df, age, sex, no_pdf_report)
     # os.remove(unfiltred_t1_filename)
     os.remove(hemi_fileneame)
     os.remove(all_lesions_filename)
@@ -141,8 +164,10 @@ def process_files(native_t1_filename, native_flair_filename, output_dir,
         print("time previews={:.2f}s".format(t9-t8))
 
 
+bounds_df = read_bounds(args.sex) if (args.age != "UNKNOWN" and not args.no_pdf_report) else read_bounds("")
+        
 process_files(native_t1_filename, native_flair_filename, output_dir,
-              args.age, args.sex, args.no_pdf_report)
+              args.age, args.sex, bounds_df, args.no_pdf_report)
 
 tt1 = time.time()
 print("TOTAL processing time={:.2f}s".format(tt1-tt0))

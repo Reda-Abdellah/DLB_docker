@@ -251,12 +251,12 @@ def to_native(inputname, transform_name, reference_name, dtype='float32'):
     outputname = inputname.replace('mni', 'native')
     ants_bin = '/opt/deeplesionbrain/Registration/antsApplyTransforms'
     # ants_bin = '../Compilation_lesionBrain_v10/Registration/antsApplyTransforms'
-    command = ants_bin + ' -d 3 -i ' + inputname + ' -r ' + reference_name + ' -o ' + outputname + ' -n MultiLabel[0.3,0] -t [' + transform_name + ', 1]'
+    #command = ants_bin + ' -d 3 -i ' + stringify(inputname) + ' -r ' + stringify(reference_name) + ' -o ' + stringify(outputname) + ' -n MultiLabel[0.3,0] -t [' + stringify(transform_name) + ', 1]'
+    command = "{} -d 3 -i {} -r {} -o {} -n MultiLabel[0.3,0] -t [{}, 1] ".format(ants_bin, stringify(inputname), stringify(reference_name), stringify(outputname), stringify(transform_name))
     print(str(command))
     run_command(str(command))
     if (dtype != 'float32'):
-        # B: ants seems to always save images as float32
-        # we have to reload & resave to have a different dtype.
+        # ants always save images as float32, reload & resave to have a different dtype.
         in_img = nii.load(outputname)
         data = in_img.get_data().astype(dtype)
         out_img = nii.Nifti1Image(data, in_img.affine)
@@ -267,7 +267,8 @@ def to_native(inputname, transform_name, reference_name, dtype='float32'):
 
 def to_MNI(inputname, outputname, transform_name, reference_name):
     ants_bin = '/opt/deeplesionbrain/Registration/antsApplyTransforms'
-    command = ants_bin + ' -d 3 -i ' + inputname + ' -r ' + reference_name + ' -o ' + outputname + ' -n BSpline -t ' + transform_name
+    #command = ants_bin + ' -d 3 -i ' + stringify(inputname) + ' -r ' + stringify(reference_name) + ' -o ' + stringify(outputname) + ' -n BSpline -t ' + stringify(transform_name)
+    command = "{} -d 3 -i {} -r {} -o {} -n BSpline -t {}".format(ants_bin, stringify(inputname), stringify(reference_name), stringify(outputname), stringify(transform_name))
     print(str(command))
     run_command(str(command))
     return outputname
@@ -280,10 +281,26 @@ def insert_lesions(tissues_name, lesions_name):
     limg = nii.load(lesions_name)
     lesions = np.asanyarray(limg.dataobj)
     assert(lesions.dtype == np.uint8)
+    label = np.max(tissues)+1
     assert(lesions.shape == tissues.shape)
-    lesion_label = np.max(tissues)+1
     ind = np.where(lesions > 0)
-    tissues[ind] = lesion_label
+    tissues[ind] = label
     array_img = nii.Nifti1Image(tissues, timg.affine)
     array_img.set_data_dtype(tissues.dtype)
     array_img.to_filename(tissues_name)
+
+
+def remove_lesions(structures_name, lesions_name):
+    simg = nii.load(structures_name)
+    structures = np.asanyarray(simg.dataobj)
+    assert(structures.dtype == np.uint8)
+    limg = nii.load(lesions_name)
+    lesions = np.asanyarray(limg.dataobj)
+    assert(lesions.dtype == np.uint8)
+    label = 0
+    assert(lesions.shape == structures.shape)
+    ind = np.where(lesions > 0)
+    structures[ind] = label
+    array_img = nii.Nifti1Image(structures, simg.affine)
+    array_img.set_data_dtype(structures.dtype)
+    array_img.to_filename(structures_name)

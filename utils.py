@@ -275,3 +275,6 @@ def run_command(cmd):
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, text=True)
         if (result.stdout != ''):
                 print(result.stdout)
+
+def stringify(s):
+    return "\"{}\"".format(s)
