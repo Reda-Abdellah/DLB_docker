@@ -19,7 +19,7 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, structures_fi
             age = "Unknown"
 
 
-    info_filename = os.path.join(os.path.dirname(input_t1_filename), os.path.basename(input_t1_filename).replace("mni_t1_", "img_info_").replace(".nii.gz", ".txt"))
+    info_filename = os.path.join(os.path.dirname(input_t1_filename), replace_extension(os.path.basename(input_t1_filename).replace("mni_t1_", "img_info_"), ".nii.gz", ".txt"))
     snr, scale, orientation_report = read_info_file(info_filename)
 
     MASK = MASK_img.get_data()
@@ -105,21 +105,14 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, structures_fi
                                           ["", "", "", ""]])
 
 
-    filenames_normal_tissue, normal_vol = get_expected_volumes(age, sex, vols_tissue, vol_ice)
-
     all_lesions = save_pdf(input_t1_filename, age, sex, snr, orientation_report, scale,
                            bounds_df, 
-                           vols_tissue, vol_ice, normal_vol, vols_structures,
+                           vols_tissue, vol_ice, vols_structures,
                            colors_ice, colors_lesions, colors_tissue, colors_structures,
                            lesion_types_filename, plot_images_filenames,
-                           filenames_normal_tissue, no_pdf_report)
+                           no_pdf_report)
 
     save_csv(input_t1_filename, age, sex, all_lesions, vol_ice, snr, scale)
 
     os.remove(info_filename)
 
-"""
-report(input_t1_filename='/data/mni_t1_MPRAGE.nii.gz', input_flair_filename='/data/mni_flair_MPRAGE.nii.gz',
-        MASK_filename='/data/mni_mask_MPRAGE.nii.gz',structures_filename='/data/mni_structures_MPRAGE.nii.gz', transform_filename='/data/matrix_affine_native_to_mni_MPRAGE.txt',
-           crisp_filename='/data/mni_tissues_MPRAGE.nii.gz', lesion_types_filename='/data/mni_lesions_MPRAGE.nii.gz', age='25', sex='male')
-#"""

@@ -276,5 +276,28 @@ def run_command(cmd):
         if (result.stdout != ''):
                 print(result.stdout)
 
+
 def stringify(s):
-    return "\"{}\"".format(s)
+        return "\"{}\"".format(s)
+
+
+# replace curr_ext by new_ext in s if s ends with curr_ext
+# otherwise return s.
+def replace_extension(s, curr_ext, new_ext):
+        lenS = len(s)
+        lenE = len(curr_ext)
+        i = (lenS - lenE)
+        if (i > 0 and s[i:] == curr_ext):
+                return s[0:i] + new_ext
+        return s
+
+# replace current extension by new_ext in s if s ends with an extension in curr_exts
+# otherwise return s.
+def replace_extensions(s, curr_exts, new_ext):
+    lenS = len(s)
+    for ext in curr_exts:
+        lenE = len(ext)
+        i = (lenS - lenE)
+        if (i > 0 and s[i:] == ext):
+            return s[0:i] + new_ext
+    return s

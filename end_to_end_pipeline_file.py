@@ -112,7 +112,7 @@ def process_files(native_t1_filename, native_flair_filename, output_dir,
     #B:TODO: set structures to 0 where lesion !!!!!!!!!!!!!
     t5 = time.time()
 
-    native_lesion = to_native(mni_lesion_filename, to_mni_affine, native_t1_filename.replace(".nii.gz", ".nii")+'.gz', dtype='uint8')
+    native_lesion = to_native(mni_lesion_filename, to_mni_affine, native_t1_filename, dtype='uint8')
     # run_command('gzip -f -9 '+stringify(mni_lesion_filename))
     # print("native_lesion=", native_lesion)
     # run_command('gzip -f -9 '+stringify(native_lesion))

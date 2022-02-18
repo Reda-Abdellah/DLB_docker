@@ -16,8 +16,8 @@ def preprocess_folder(in_folder_path, T1Keyword="T1", FLAIRKeyword='FLAIR'):  # 
         print('processing: ' + T1 + ' and ' + FLAIR)
         nativeT1_name = in_folder_path + 'native_' + T1.split('/')[-1]
         nativeFLAIR_name = in_folder_path + 'native_' + FLAIR.split('/')[-1]
-        nativeT1_name = nativeT1_name.replace('.gz', '')
-        nativeFLAIR_name = nativeFLAIR_name.replace('.gz', '')
+        nativeT1_name = replace_extension(nativeT1_name, '.gz', '')
+        nativeFLAIR_name = replace_extension(nativeFLAIR_name, '.gz', '')
         if('.gz' in FLAIR):
             copyfile(FLAIR, nativeFLAIR_name + '.gz')
             run_command('gunzip ' + stringify(nativeFLAIR_name + '.gz'))
@@ -54,11 +54,12 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives ab
     FLAIR_name = os.path.basename(nativeFLAIR_name)
 
     # output filenames of MATLAB code
-    outT1 = os.path.join(dirname, 'n_mfmni_f' + T1_name.replace('.nii', '_check.nii'))
-    outFLAIR = os.path.join(dirname, 'n_mfmni_f' + FLAIR_name.replace('.nii', '_check.nii'))
+    #TODO: replace_prefix() !!!!
+    outT1 = os.path.join(dirname, 'n_mfmni_f' + replace_extension(T1_name, '.nii', '_check.nii'))
+    outFLAIR = os.path.join(dirname, 'n_mfmni_f' + replace_extension(FLAIR_name, '.nii', '_check.nii'))
     outMASK = outT1.replace('n_mfmni_f', 'mask_n_mfmni_f')
-    outIntoT1 = os.path.join(dirname, 'affine_intot1_f' + FLAIR_name.replace('.nii', '_checkAffine.txt'))
-    outAffine = os.path.join(dirname, 'affine_mf' + T1_name.replace('.nii', '_checkAffine.txt'))
+    outIntoT1 = os.path.join(dirname, 'affine_intot1_f' + replace_extension(FLAIR_name, '.nii', '_checkAffine.txt'))
+    outAffine = os.path.join(dirname, 'affine_mf' + replace_extension(T1_name, '.nii', '_checkAffine.txt'))
     outCrisp = outT1.replace('n_mfmni_f', 'crisp_mfmni_f')
     outHemi = outT1.replace('n_mfmni_f', 'hemi_n_mfmni_f')
     outStructures = outT1.replace('n_mfmni_f', 'lab_n_mfmni_f')
@@ -66,8 +67,8 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives ab
     newT1 = os.path.join(output_dir, 'mni_t1_' + T1_name)
     newFLAIR = os.path.join(output_dir, 'mni_flair_' + T1_name)
     newMASK = os.path.join(output_dir, 'mni_mask_' + T1_name)
-    newIntoT1 = os.path.join(output_dir, 'matrix_affine_flair_to_t1_' + T1_name.replace('.nii', '.txt'))
-    newAffine = os.path.join(output_dir, 'matrix_affine_native_to_mni_' + T1_name.replace('.nii', '.txt'))
+    newIntoT1 = os.path.join(output_dir, 'matrix_affine_flair_to_t1_' + replace_extension(T1_name, '.nii', '.txt'))
+    newAffine = os.path.join(output_dir, 'matrix_affine_native_to_mni_' + replace_extension(T1_name, '.nii', '.txt'))
     newCrisp = os.path.join(output_dir, 'mni_tissues_' + T1_name)
     newHemi = os.path.join(output_dir, 'mni_hemi_' + T1_name)  # B:TODO:useless ???
     newStructures = os.path.join(output_dir, 'mni_structures_sym_' + T1_name)  # B:TODO:useless ???
@@ -84,8 +85,8 @@ def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives ab
     move(outHemi, newHemi)  # B:TODO: useless ???
     move(outStructures, newStructures)  # B:TODO: useless ???
 
-    os.remove(nativeT1_name.replace('.nii', '_check.nii'))  # B:TODO: ???
-    os.remove(nativeFLAIR_name.replace('.nii', '_check.nii'))
+    os.remove(replace_extension(nativeT1_name, '.nii', '_check.nii'))  # B:TODO: ???
+    os.remove(replace_extension(nativeFLAIR_name, '.nii', '_check.nii'))
 
     os.remove(os.path.join(dirname, "log.txt")) # matlab log file
 
