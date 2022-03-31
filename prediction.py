@@ -273,7 +273,7 @@ def to_MNI(inputname, outputname, transform_name, reference_name):
     run_command(str(command))
     return outputname
 
-
+# Insert lesions as a new label in tissues
 def insert_lesions(tissues_name, lesions_name):
     timg = nii.load(tissues_name)
     tissues = np.asanyarray(timg.dataobj)
@@ -290,6 +290,7 @@ def insert_lesions(tissues_name, lesions_name):
     array_img.to_filename(tissues_name)
 
 
+# Set structures to 0 where there is a lesion
 def remove_lesions(structures_name, lesions_name):
     simg = nii.load(structures_name)
     structures = np.asanyarray(simg.dataobj)
