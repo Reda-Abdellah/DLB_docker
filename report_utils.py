@@ -26,12 +26,12 @@ version = '1.0'
 release_date = datetime.datetime.strptime("30-07-2021", "%d-%m-%Y").strftime("%d-%b-%Y")
 
 
-# RGB
-colormap = {}
-colormap[0] = [0, 0, 0]
-colormap[1] = [255, 0, 0]
-colormap[2] = [0, 255, 0]
-colormap[3] = [0, 0, 255]
+# # RGB
+# colormap = {}
+# colormap[0] = [0, 0, 0]
+# colormap[1] = [255, 0, 0]
+# colormap[2] = [0, 255, 0]
+# colormap[3] = [0, 0, 255]
 
 
 # def save_obj(obj, name):
@@ -43,8 +43,8 @@ colormap[3] = [0, 0, 255]
 #     with open(name + '.pkl', 'rb') as f:
 #         return pickle.load(f)
 
-def get_structures(hemi_fileneame, structures_sym_filename):
-    hemi = nii.load(hemi_fileneame).get_data()
+def get_structures(hemi_filename, structures_sym_filename):
+    hemi = nii.load(hemi_filename).get_data()
     structures_sym = nii.load(structures_sym_filename).get_data() 
     structures = np.zeros(hemi.shape)
     
@@ -66,10 +66,10 @@ def get_structures(hemi_fileneame, structures_sym_filename):
     structures[np.logical_and((hemi==2) , (structures_sym==3))]=4
     structures[(structures_sym==2)]=2
 
-    structures_name = structures_sym_filename.replace('_sym', '').replace('.nii', '.nii.gz')
-    array_img = nii.Nifti1Image(structures.astype('uint8'), nii.load(hemi_fileneame).affine)
-    array_img.to_filename(structures_name)
-    return structures_name
+    structures_filename = structures_sym_filename.replace('_sym', '').replace('.nii', '.nii.gz')
+    array_img = nii.Nifti1Image(structures.astype('uint8'), nii.load(hemi_filename).affine)
+    array_img.to_filename(structures_filename)
+    return structures_filename
 
 
 def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesion):
@@ -586,7 +586,7 @@ def get_tissue_names_in_bound_csv(name):
     
 def get_structure_names_in_bound_csv(name):
     return [f"{name} Total cm3", f"{name} Right cm3", f"{name} Left cm3", f"{name} Asymmetry"]
-
+#TODO:BORIS: ce n'est pas des "cm3" !!!!!! Supprimer ca du code matlab !!!
 
 def compute_vol_bounds(age, bounds_df):
     def get_bounds(name, age, df):
@@ -699,7 +699,7 @@ def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue,
             tp_low, tp_up, tp_color, rp_low, rp_up, rp_color, lp_low, lp_up, lp_color, a_low, a_up, a_color = getBoundsSym(n, tp, rp, lp, a, vol_ice, bounds_df)
             out.write(Template('$rc $n & $tp_c{$t / $tp} & $rp_c{$r / $rp} & $lp_c{$l / $lp} & $a_c{$a} \\\\\n').safe_substitute(rc=rowColor, n=n, tp_c=tp_color, t="{:5.2f}".format(t), tp="{:5.3f}".format(tp), rp_c=rp_color, r="{:5.2f}".format(r), rp="{:5.3f}".format(rp), lp_c=lp_color, l="{:5.2f}".format(l), lp="{:5.3f}".format(lp), a_c=a_color, a="{:5.4f}".format(a)))
             out.write(Template('$rc & \\scriptsize $tp_c{[$tp_low, $tp_up]} & \\scriptsize $rp_c{[$rp_low, $rp_up]} & \\scriptsize $lp_c{[$lp_low, $lp_up]} & \\scriptsize $a_c{[$a_low, $a_up]} \\\\\n').safe_substitute(rc=rowColor, tp_c=tp_color, tp_low="{:5.3f}".format(tp_low), tp_up="{:5.3f}".format(tp_up), rp_c=rp_color, rp_low="{:5.3f}".format(rp_low), rp_up="{:5.3f}".format(rp_up), lp_c=lp_color, lp_low="{:5.3f}".format(lp_low), lp_up="{:5.3f}".format(lp_up), a_c=a_color, a_low="{:5.3f}".format(a_low), a_up="{:5.3f}".format(a_up)))
-            
+
         # t = l+r
         # left = 100*vols_structures[i*2]/v
         # p = 100*v/vol_ice

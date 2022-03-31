@@ -20,7 +20,7 @@ import time
 import subprocess
 
 
-def save_flair_preview(input_file):
+def save_img_preview(input_file):
 	nii.Nifti1Header.quaternion_threshold = -8e-07
 	# read test data
 	output_file = os.path.join(os.path.dirname(input_file), 'preview_' + os.path.basename(input_file))

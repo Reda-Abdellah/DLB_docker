@@ -63,7 +63,7 @@ def process_files(native_t1_filename, native_flair_filename, output_dir,
 
 
     t0 = time.time()
-    mni_t1_filename, mni_flair_filename, mni_mask_filename, intot1, to_mni_affine, crisp_filename, hemi_fileneame, structures_sym_filename = preprocess_file(tmp_t1_filename, tmp_flair_filename, output_dir)
+    mni_t1_filename, mni_flair_filename, mni_mask_filename, intot1, to_mni_affine, crisp_filename, hemi_filename, structures_sym_filename = preprocess_file(tmp_t1_filename, tmp_flair_filename, output_dir)
 
     run_command("ls {}".format(output_dir)) #DEBUG
 
@@ -101,36 +101,37 @@ def process_files(native_t1_filename, native_flair_filename, output_dir,
     run_command('gzip -f -9 '+stringify(native_mask))
     run_command('gzip -f -9 '+stringify(native_tissues))
     run_command('gzip -f -9 '+stringify(crisp_filename))  # mni_tissues
-    # run_command('gzip -f -9 '+stringify(hemi_fileneame))  # B:useless
+    # run_command('gzip -f -9 '+stringify(hemi_filename))  # B:useless
     # run_command('gzip -f -9 '+stringify(structures_filename))  # B:useless
     t4 = time.time()
 
-    mni_lesion_filename = get_lesion_by_regions(mni_t1_filename+'.gz', crisp_filename+'.gz', hemi_fileneame, structures_sym_filename, all_lesions_filename)
-    structures_filename = get_structures(hemi_fileneame, structures_sym_filename)
+    mni_lesion_filename = get_lesion_by_regions(mni_t1_filename+'.gz', crisp_filename+'.gz', hemi_filename, structures_sym_filename, all_lesions_filename)
+    mni_structures_filename = get_structures(hemi_filename, structures_sym_filename)
     # mni_lesion_filename is already gzipped (as passed mni_t1 was)
 
-    #B:TODO: set structures to 0 where lesion !!!!!!!!!!!!!
     t5 = time.time()
 
     native_lesion = to_native(mni_lesion_filename, to_mni_affine, native_t1_filename, dtype='uint8')
+    native_structures = to_native(mni_structures_filename, to_mni_affine, native_t1_filename, dtype='uint8')
     # run_command('gzip -f -9 '+stringify(mni_lesion_filename))
     # print("native_lesion=", native_lesion)
     # run_command('gzip -f -9 '+stringify(native_lesion))
-    # B:TODO: comme on travaill sur des fichiers compressés, ça produit des fichiers compressés : mais on pourrait les compresser plus ????
+    # B:TODO: comme on travaille sur des fichiers compressés, ça produit des fichiers compressés : mais on pourrait les compresser plus ????
 
     t6 = time.time()
 
     insert_lesions(native_tissues+'.gz', native_lesion)
     insert_lesions(crisp_filename+'.gz', mni_lesion_filename)
     
-    remove_lesions(structures_filename, mni_lesion_filename)
+    remove_lesions(native_structures, native_lesion)
+    remove_lesions(mni_structures_filename, mni_lesion_filename)
     
     t7 = time.time()
 
-    report(mni_t1_filename+'.gz', mni_flair_filename+'.gz', mni_mask_filename+'.gz', structures_filename,  # all_lesions_filename+'.gz',
+    report(mni_t1_filename+'.gz', mni_flair_filename+'.gz', mni_mask_filename+'.gz', mni_structures_filename,  # all_lesions_filename+'.gz',
            to_mni_affine, crisp_filename+'.gz', mni_lesion_filename, bounds_df, age, sex, no_pdf_report)
     # os.remove(unfiltred_t1_filename)
-    os.remove(hemi_fileneame)
+    os.remove(hemi_filename)
     os.remove(all_lesions_filename)
     os.remove(structures_sym_filename)
 
@@ -141,9 +142,12 @@ def process_files(native_t1_filename, native_flair_filename, output_dir,
 
     if platform:
         # [platform] Save previews
-        save_flair_preview(mni_flair_filename+'.gz')
+        save_img_preview(mni_t1_filename+'.gz')
+        save_img_preview(mni_flair_filename+'.gz')
         shutil.copyfile(mni_lesion_filename, os.path.join(os.path.dirname(mni_lesion_filename), "preview_"+os.path.basename(mni_lesion_filename)))
+        shutil.copyfile(mni_structures_filename, os.path.join(os.path.dirname(mni_structures_filename), "preview_"+os.path.basename(mni_structures_filename)))
         shutil.copyfile(mni_mask_filename+".gz", os.path.join(os.path.dirname(mni_mask_filename), "preview_"+os.path.basename(mni_mask_filename)+".gz"))
+        shutil.copyfile(crisp_filename+".gz", os.path.join(os.path.dirname(crisp_filename), "preview_"+os.path.basename(crisp_filename)+".gz")) #mni_tissues
         # [platform] Copy original files
         shutil.copyfile(native_t1_filename, os.path.join(os.path.dirname(mni_t1_filename), os.path.basename(mni_t1_filename).replace("mni_t1_", "original_t1_")+".gz"))
         shutil.copyfile(native_flair_filename, os.path.join(os.path.dirname(mni_t1_filename), os.path.basename(mni_t1_filename).replace("mni_t1_", "original_flair_")+".gz"))
