@@ -10,14 +10,40 @@ import time
 
 tt0 = time.time()
 
+UNKNOWN = 'Unknown'
+
+def age_float_type(arg):
+    """ Type function for argparse - a float within some predefined bounds """
+    if arg == UNKNOWN:
+        return arg
+    try:
+        f = float(arg)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a floating point number")
+    MIN_VAL = 0
+    MAX_VAL = 130
+    if f < MIN_VAL or f > MAX_VAL:
+        raise argparse.ArgumentTypeError(f"argument must be > {MIN_VAL} and < {MAX_VAL}")
+    return f
+
+
+def sex_type(arg):
+    if arg == UNKNOWN:
+        return arg
+    sex = str(arg).lower()
+    if sex != "female" and sex != "male":
+        raise argparse.ArgumentTypeError("argument must be \"female\" or \"male\"")
+    return arg
+
+
 parser = argparse.ArgumentParser(
     description="""DeepLesionBrain platform version""", formatter_class=argparse.RawTextHelpFormatter)
 
-parser.add_argument('T1_filename', type=str, help='T1 filename')
-parser.add_argument('FLAIR_filename', type=str, help='FLAIR filename')
-parser.add_argument('-no-pdf-report', action='store_true')
-parser.add_argument('-sex', type=str, default='Unknown')
-parser.add_argument('-age', type=str, default='Unknown')
+parser.add_argument('T1_filename', type=str, help='input T1 filename')
+parser.add_argument('FLAIR_filename', type=str, help='input FLAIR filename')
+parser.add_argument('-no-pdf-report', action='store_true', help='do not output the pdf report of each T1 image')
+parser.add_argument('-sex', type=sex_type, default=UNKNOWN, help='specify sex of subject on input images, as \"female\" or \"male\"')
+parser.add_argument('-age', type=age_float_type, default=UNKNOWN, help='specify age in years of subject on input images'))
 args = parser.parse_args()
 
 
