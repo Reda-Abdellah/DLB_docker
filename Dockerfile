@@ -36,6 +36,8 @@ RUN mkdir /Weights
 COPY trained_all_second_step_iqda/ /Weights/
 
 COPY end_to_end_pipeline_file.py end_to_end_pipeline.py make_reports.py modelos.py prediction.py preprocessing.py report_utils.py utils.py header.png female_vb_bounds.pkl male_vb_bounds.pkl average_vb_bounds.pkl README.pdf /opt/deeplesionbrain/
+COPY licence_eng_DeepLesionBrain.txt /opt/deeplesionbrain/license.txt
+COPY licence_fr_DeepLesionBrain.txt /opt/deeplesionbrain/licence.txt
 
 #RUN mkdir /data/
 
