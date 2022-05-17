@@ -43,7 +43,7 @@ parser.add_argument('T1_filename', type=str, help='input T1 filename')
 parser.add_argument('FLAIR_filename', type=str, help='input FLAIR filename')
 parser.add_argument('-no-pdf-report', action='store_true', help='do not output the pdf report of each T1 image')
 parser.add_argument('-sex', type=sex_type, default=UNKNOWN, help='specify sex of subject on input images, as \"female\" or \"male\"')
-parser.add_argument('-age', type=age_float_type, default=UNKNOWN, help='specify age in years of subject on input images'))
+parser.add_argument('-age', type=age_float_type, default=UNKNOWN, help='specify age in years of subject on input images')
 args = parser.parse_args()
 
 
