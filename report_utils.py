@@ -72,7 +72,7 @@ def get_structures(hemi_filename, structures_sym_filename):
     return structures_filename
 
 
-def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesion):
+def get_lesion_by_regions(filename_T1, filename_tissues, filename_macrostructures, filename_structures, filename_lesion):
 
     juxtacortical_idx = 3
     deepwhite_idx = 2
@@ -80,20 +80,20 @@ def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesio
     cerebelar_idx = 4
     medular_idx = 5
 
-    T1_img = nii.load(fname)
-    crisp = nii.load(fname_crisp).get_data()
-    hemi = nii.load(fname_hemi).get_data()
-    lab = nii.load(fname_lab).get_data()
-    lesion = nii.load(fname_lesion).get_data()
+    T1_img = nii.load(filename_T1)
+    tissues = nii.load(filename_tissues).get_data()
+    macrostructures = nii.load(filename_macrostructures).get_data()
+    structures = nii.load(filename_structures).get_data()
+    lesion = nii.load(filename_lesion).get_data()
 
-    ventricles = (lab == 1) + (lab == 2)
-    cond1 = (crisp == 3)
+    ventricles = (structures == 1) + (structures == 2)  # left & right lateral ventricles
+    cond1 = (tissues == 3) # WM
     cond2 = (lesion > 0)
     structure = np.ones([5, 5, 5])
-    cond3 = binary_dilation((lab > 0), structure)
+    cond3 = binary_dilation((structures > 0), structure)
     wm_filled = binary_fill_holes((cond1.astype('int') + cond2.astype('int') + cond3.astype('int')) > 0).astype('int')*6
 
-    wm = (((crisp == 3) + (lesion > 0)) > 0).astype('int')
+    wm = (((tissues == 3) + (lesion > 0)) > 0).astype('int')
 
     SE = np.zeros([5, 5, 5])  # 3 mm distance
     for i in range(5):
@@ -106,26 +106,26 @@ def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesio
     yuxtacortical = wm_filled-binary_erosion(wm_filled, SE)
     deep = abs(wm_filled-periventricular-yuxtacortical) > 0
 
-    cerebrum = (hemi == 1) + (hemi == 2)
-    medular = (hemi == 5)
-    cerebelar = ((hemi == 4) + (hemi == 3)) * (crisp == 3)
+    cerebrum = (macrostructures == 1) + (macrostructures == 2)  # left & right hemisphere
+    medular = (macrostructures == 5)  # brainstem
+    cerebelar = ((macrostructures == 4) + (macrostructures == 3)) * (tissues == 3)  # (right & left cerebellum)
     # infratenttorial = medular+cerebelar
 
-    regions = np.zeros(crisp.shape, dtype=np.uint8)
+    regions = np.zeros(tissues.shape, dtype=np.uint8)
     ind = (cerebrum * yuxtacortical) > 0
-    regions[ind] = 3
+    regions[ind] = juxtacortical_idx
     ind = (cerebrum * deep) > 0
-    regions[ind] = 2
+    regions[ind] = deepwhite_idx
     ind = (cerebrum * periventricular) > 0
-    regions[ind] = 1
+    regions[ind] = periventricular_idx
     ind = (cerebelar) > 0
-    regions[ind] = 4
+    regions[ind] = cerebelar_idx
     ind = (medular) > 0
-    regions[ind] = 5
+    regions[ind] = medular_idx
 
     # #result
-    # region_name = fname_crisp.replace('tissues', 'regions')
-    # wm_name = fname_crisp.replace('tissues', 'wmmap')
+    # region_name = filename_tissues.replace('tissues', 'regions')
+    # wm_name = filename_tissues.replace('tissues', 'wmmap')
     # nii.Nifti1Image(regions, T1_img.affine).to_filename(region_name)
     # nii.Nifti1Image(wm, T1_img.affine).to_filename(wm_name)
 
@@ -158,7 +158,7 @@ def get_lesion_by_regions(fname, fname_crisp, fname_hemi, fname_lab, fname_lesio
         else:
             lesion2[ind] = deepwhite_idx
 
-    classified_name = fname.replace('t1', 'lesions')
+    classified_name = filename_T1.replace('t1', 'lesions')
     array_img = nii.Nifti1Image(lesion2, T1_img.affine)
     array_img.set_data_dtype(lesion2.dtype)
     array_img.to_filename(classified_name)
@@ -443,7 +443,7 @@ def write_lesions(out, lesion_types_filename, scale, vol_ice, WM_vol):
     return all_lesions
 
 
-def write_lesion_table(out, lesion_types_filename, colors_lesions, scale, vol_ice, WM_vol):
+def write_lesion_table(out, lesion_types_filename, scale, vol_ice, WM_vol):
     types = ['healthy', 'Periventricular', 'Deepwhite', 'Juxtacortical', 'Cerebellar', 'Medular']
     lesion_mask = nii.load(lesion_types_filename).get_data()
     out.write(Template('\n').safe_substitute())
@@ -520,7 +520,7 @@ def get_image_info(out, orientation_report, scale, snr):
     out.write(Template('\\vspace*{10pt}\n').safe_substitute())
 
 
-def get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, age, bounds_df):
+def get_tissue_seg(out, vols_tissue, vol_ice, age, bounds_df):
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c}\n').safe_substitute())
     out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Tissues}} & {\\bfseries \\textcolor{text_white}{Absolute vol. ($cm^{3}$)}} & {\\bfseries \\textcolor{text_white}{Normalized vol. (\%)}}  \\\\\n').safe_substitute())
 
@@ -673,7 +673,7 @@ def getBoundsSym(name, tp, rp, lp, a, vol_ice, bounds_df):
     return tp_low, tp_up, tp_color, rp_low, rp_up, rp_color, lp_low, lp_up, lp_color, a_low, a_up, a_color
 
 
-def get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_tissue, bounds_df):
+def get_structures_seg(out, vols_structures, vol_ice, bounds_df):
     out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X c c c c}\n').safe_substitute())
     out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{Structure}} & {\\bfseries \\textcolor{text_white}{Total ($cm^{3}$ / \\%)}} & {\\bfseries \\textcolor{text_white}{Right ($cm^{3}$ / \\%)}} & {\\bfseries \\textcolor{text_white}{Left ($cm^{3}$ / \\%)}} & {\\bfseries \\textcolor{text_white}{Asymmetry (\\%)}}  \\\\\n').safe_substitute())
     """
@@ -784,7 +784,7 @@ def write_banner(out):
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\begin{document}\n').safe_substitute())
     out.write(Template('\\begin{center}\n').safe_substitute())
-    filename_header = "header.png"
+    filename_header = "header_deeplesionbrain.png"
     out.write(Template('\\href{https://www.volbrain.net}{\\XeTeXLinkBox{ \\includegraphics[width=0.9\\textwidth]{$f}}}\\\\\n').safe_substitute(f=filename_header))
     # out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X X X X}\n').safe_substitute())
     # out.write(Template('\\footnotesize \\itshape \\textcolor{NavyBlue}{version $v release $d}\n').safe_substitute(v=version, d=release_date))
@@ -804,6 +804,8 @@ def save_pdf(input_file, age, gender, snr, orientation_report, scale,
     # output_tex_filename = input_file.replace(".nii.gz", ".nii").replace(".nii", ".tex").replace("mni", "report")
     output_tex_filename = os.path.join(os.path.dirname(input_file), replace_extensions(os.path.basename(input_file).replace("mni_t1_", "report_"), [".nii.gz", ".nii"], ".tex"))
     print("output_tex_filename=", output_tex_filename)
+
+    vol_WM = vols_tissue[2]
 
     with open(output_tex_filename, 'w', newline='') as out:
 
@@ -826,7 +828,7 @@ def save_pdf(input_file, age, gender, snr, orientation_report, scale,
             get_image_info(out, orientation_report, scale, snr)
 
             # Tissues Segmentation
-            get_tissue_seg(out, vols_tissue, vol_ice, colors_ice, colors_tissue, age, bounds_df)
+            get_tissue_seg(out, vols_tissue, vol_ice, age, bounds_df)
 
             out.write(Template('\\vspace*{3pt}\n').safe_substitute())
             
@@ -840,7 +842,7 @@ def save_pdf(input_file, age, gender, snr, orientation_report, scale,
                 out.write(Template('\\vspace*{5pt}\n').safe_substitute())
                 
             # structure Segmentation
-            get_structures_seg(out, vols_structures, vol_ice, colors_ice, colors_structures, bounds_df)
+            get_structures_seg(out, vols_structures, vol_ice, bounds_df)
 
             if (not display_bounds):
                 out.write(Template('\\vspace*{20pt}\n').safe_substitute())
@@ -848,7 +850,7 @@ def save_pdf(input_file, age, gender, snr, orientation_report, scale,
                 out.write(Template('\\vspace*{5pt}\n').safe_substitute())
 
             # Lesion tables
-            write_lesion_table(out, lesion_types_filename, colors_lesions, scale, vol_ice, WM_vol=vols_tissue[2])
+            write_lesion_table(out, lesion_types_filename, scale, vol_ice, WM_vol=vol_WM)
 
             if (not display_bounds):
                 out.write(Template('\\vspace*{50pt}\n').safe_substitute())
@@ -874,7 +876,7 @@ def save_pdf(input_file, age, gender, snr, orientation_report, scale,
             plot_img(out, plot_images_filenames)
 
         # Lesion type tables
-        all_lesions = write_lesions(out, lesion_types_filename, scale, vol_ice, vols_tissue[2])
+        all_lesions = write_lesions(out, lesion_types_filename, scale, vol_ice, vol_WM)
 
         if not no_pdf_report:
             out.write(Template('\\end{center}\n').safe_substitute())
