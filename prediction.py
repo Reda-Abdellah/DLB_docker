@@ -252,7 +252,11 @@ def to_native(inputname, transform_name, reference_name, dtype='float32'):
     ants_bin = '/opt/deeplesionbrain/Registration/antsApplyTransforms'
     # ants_bin = '../Compilation_lesionBrain_v10/Registration/antsApplyTransforms'
     #command = ants_bin + ' -d 3 -i ' + stringify(inputname) + ' -r ' + stringify(reference_name) + ' -o ' + stringify(outputname) + ' -n MultiLabel[0.3,0] -t [' + stringify(transform_name) + ', 1]'
-    command = "{} -d 3 -i {} -r {} -o {} -n MultiLabel[0.3,0] -t [{}, 1] ".format(ants_bin, stringify(inputname), stringify(reference_name), stringify(outputname), stringify(transform_name))
+    if 'int' in dtype:
+        command = "{} -d 3 -i {} -r {} -o {} -n MultiLabel[0.3,0] -t [{}, 1] ".format(ants_bin, stringify(inputname), stringify(reference_name), stringify(outputname), stringify(transform_name))
+    else:
+        command = "{} -d 3 -i {} -r {} -o {} -n BSpline -t [{}, 1] ".format(ants_bin, stringify(inputname), stringify(reference_name), stringify(outputname), stringify(transform_name))
+
     print(str(command))
     run_command(str(command))
     if (dtype != 'float32'):

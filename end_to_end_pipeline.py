@@ -41,8 +41,8 @@ else:
                                 FG_list=mni_MASKSs, normalization="kde")
 
     for mni_lesions_name, mni_mask_name, nativeT1_name, to_mni_affine in zip(lesions_list, mni_MASKSs, listaT1, affines):
-        to_native(mni_lesions_name, to_mni_affine, nativeT1_name)
-        to_native(mni_mask_name, to_mni_affine, nativeT1_name)
+        to_native(mni_lesions_name, to_mni_affine, nativeT1_name, dtype='uint8')
+        to_native(mni_mask_name, to_mni_affine, nativeT1_name, dtype='uint8')
 
 for img in keyword_toList(path=in_folder_path, keyword='.nii'):
     if(not ('.gz' in img)):
