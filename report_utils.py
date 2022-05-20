@@ -362,9 +362,13 @@ def make_slice_with_seg_image_with_alpha_blending(T1_slice, LAB_slice, colors, a
 
 def get_patient_id(input_file):
     idStr = replace_extension(input_file, ".pdf", "")  # get_filename(input_file, "", "")
-    if len(idStr) > 20:
-        idStr = idStr[0:14]+"..."
+    if len(idStr) > 21:
+        idStr = idStr[0:15]+"..."
     return idStr
+
+
+def getLatexStr(s):
+    return s.replace("_", "\_")
 
 
 def getRowColor(i):
@@ -504,7 +508,7 @@ def get_patient_info(out, basename, gender, age):
     genderStr = capitalize(gender)
     if genderStr[0] == "U":
         genderStr = "UNKNOWN"
-    out.write(Template('$p & $g & $a & $d\\\\ \n').safe_substitute(p=basename, g=genderStr, a=ageStr, d=date))
+    out.write(Template('$p & $g & $a & $d\\\\ \n').safe_substitute(p=getLatexStr(basename), g=genderStr, a=ageStr, d=date))
     out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
     out.write(Template('\\vspace*{10pt}\n').safe_substitute())
