@@ -198,9 +198,9 @@ def segmentation(nbNN, ps, Weights_list, T1_list, FLAIR_list, FG_list, normaliza
     lesions_list = []
     for i in range(len(T1_list)):
         try:
-            lesions_list.append(segment_image(nbNN, ps, Weights_list, T1_list[i], T1_list[i], FG_list[i], normalization="kde"))
+            lesions_list.append(segment_image(nbNN, ps, Weights_list, T1_list[i], FLAIR_list[i], FG_list[i], normalization=normalization))
         except:
-            lesions_list.append(segment_image(nbNN, ps, Weights_list, T1_list[i], T1_list[i], None, normalization="kde"))
+            lesions_list.append(segment_image(nbNN, ps, Weights_list, T1_list[i], FLAIR_list[i], None, normalization=normalization))
 
     return lesions_list
 
