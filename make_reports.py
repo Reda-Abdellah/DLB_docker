@@ -69,31 +69,37 @@ def report(input_t1_filename, input_flair_filename, MASK_filename, structures_fi
         #I changed colors_ice with colors_structures and MASK with Structures
         # Axial
         slice_index = 80
+        letters = ["L", "R", "A", "P"]
         filename_seg_0, filename_ice_0, filename_tissue_0, filename_flair_0 = save_images("0",
                                                                                           T1[:, :, slice_index],
                                                                                           FLAIR[:, :, slice_index],
                                                                                           CRISP[:, :, slice_index],
                                                                                           lesion_types[:, :, slice_index],
                                                                                           Structures[:, :, slice_index],
-                                                                                          colors_structures, colors_lesions, colors_tissue)
+                                                                                          colors_structures, colors_lesions, colors_tissue,
+                                                                                          letters)
         # Coronal
         slice_index = 120
+        letters = ["L", "R", "S", "I"]
         filename_seg_1, filename_ice_1, filename_tissue_1, filename_flair_1 = save_images("1",
                                                                                           T1[:, slice_index, :],
                                                                                           FLAIR[:, slice_index, :],
                                                                                           CRISP[:, slice_index, :],
                                                                                           lesion_types[:, slice_index, :],
                                                                                           Structures[:, slice_index, :],
-                                                                                          colors_structures, colors_lesions, colors_tissue)
+                                                                                          colors_structures, colors_lesions, colors_tissue,
+                                                                                          letters)
         # Sagittal
         slice_index = 70
+        letters = ["P", "A", "S", "I"]
         filename_seg_2, filename_ice_2, filename_tissue_2, filename_flair_2 = save_images("2",
                                                                                           T1[slice_index, :, :],
                                                                                           FLAIR[slice_index, :, :],
                                                                                           CRISP[slice_index, :, :],
                                                                                           lesion_types[slice_index, :, :],
                                                                                           Structures[slice_index, :, :],
-                                                                                          colors_structures, colors_lesions, colors_tissue)
+                                                                                          colors_structures, colors_lesions, colors_tissue,
+                                                                                          letters)
 
         plot_images_filenames = np.array([[filename_flair_0, filename_ice_0, filename_tissue_0, filename_seg_0],
                                           [filename_flair_1, filename_ice_1, filename_tissue_1, filename_seg_1],

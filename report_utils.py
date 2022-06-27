@@ -5,7 +5,7 @@ import csv
 import numpy as np
 import nibabel as nii
 from string import Template
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 from skimage import filters
 from scipy.ndimage.morphology import binary_fill_holes, binary_dilation, binary_erosion
 from scipy.ndimage.measurements import center_of_mass
@@ -288,8 +288,16 @@ def save_seg_nii(img, affine, input_filename, prefix):
     array_img.to_filename(output_filename)
 
 
-def make_centered(im, width=256, height=256):
+LETTER_MARGIN=11
+LETTER_WIDTH=10
+FONT_NAME="/usr/local/MATLAB/MATLAB_Runtime/v93/toolbox/matlab/findfiles/release/fonts/vera-webfont.ttf"
+
+
+def make_centered(im, width=256, height=256, letters=[]):
     assert(im.ndim == 3)
+    owidth = width+2*LETTER_MARGIN
+    oheight = height+2*LETTER_MARGIN
+
     if ((im.shape[0] > width) or (im.shape[1] > height)):
         rw = im.shape[1] / width
         rh = im.shape[0] / height
@@ -305,12 +313,33 @@ def make_centered(im, width=256, height=256):
         
     assert(im.shape[1] <= width)
     assert(im.shape[0] <= height)
-    y0 = int(height/2 - im.shape[0]/2)
-    x0 = int(width/2 - im.shape[1]/2)
-    assert(x0 >= 0 and x0 <= width)
-    assert(y0 >= 0 and y0 <= height)
-    out = np.zeros((height, width, 3), im.dtype)
+    y0 = int(oheight/2 - im.shape[0]/2)
+    x0 = int(owidth/2 - im.shape[1]/2)
+    assert(x0 >= 0 and x0 <= owidth)
+    assert(y0 >= 0 and y0 <= oheight)
+    out = np.zeros((oheight, owidth, 3), im.dtype)
     out[y0:y0+im.shape[0], x0:x0+im.shape[1], :] = im
+
+    if letters:
+        hh = oheight/2
+        hw = owidth/2
+        out = Image.fromarray(out, 'RGB')
+        draw = ImageDraw.Draw(out)
+        font = ImageFont.truetype(FONT_NAME, 10)
+        color = tuple([255, 255, 0])
+        M=1
+        #tx0 = max(M, x0-LETTER_MARGIN)
+        tx0 = max(M, x0-LETTER_WIDTH)
+        draw.text((tx0, hh), letters[0], color, font=font)
+        #tx1 = min(owidth-LETTER_MARGIN+M, x0+width+M)
+        tx1 = min(owidth-LETTER_MARGIN+M, x0+im.shape[1]+M+1)
+        #print("tx1=", tx1)
+        draw.text((tx1, hh), letters[1], color, font=font)
+        #draw.text((hw, M), letters[2], color, font=font)
+        draw.text((hw, 0), letters[2], color, font=font)
+        draw.text((hw, oheight-LETTER_MARGIN+M), letters[3], color, font=font)
+        out = np.array(out)
+
     return out
 
 
@@ -409,7 +438,6 @@ def write_lesions_details(out, name, seg_labels, seg_num, scale, vol_ice, lesion
 
             out.write(Template('\\end{tabularx}\n').safe_substitute())
             out.write(Template('\n').safe_substitute())
-            out.write(Template('\\vspace*{10pt}\n').safe_substitute())
 
 
 def write_lesions(out, lesion_types_filename, scale, vol_ice, WM_vol):
@@ -424,6 +452,8 @@ def write_lesions(out, lesion_types_filename, scale, vol_ice, WM_vol):
         lesion_type = (lesion_mask == i).astype('int')
         seg_labels, seg_num, vol, lesion_burden = compute_lesion_measures((lesion_mask == i), scale, WM_vol)
         write_lesions_details(out, types[i], seg_labels, seg_num, scale, vol_ice, lesion_number)
+        #out.write(Template('\\vspace*{10pt}\n').safe_substitute())
+        out.write(Template('\\vspace*{5pt}\n').safe_substitute())
         lesion_number += seg_num
         all_lesions_type = {'count': seg_num, 'volume_abs': vol, 'volume_rel': vol*100/vol_ice, 'burden': lesion_burden}
         all_lesions.append(all_lesions_type)
@@ -431,6 +461,8 @@ def write_lesions(out, lesion_types_filename, scale, vol_ice, WM_vol):
     seg_labelsC, seg_numC, volC, lesion_burdenC = compute_lesion_measures((lesion_mask == 4), scale, WM_vol)  # Cerebellar
     seg_labelsM, seg_numM, volM, lesion_burdenM = compute_lesion_measures((lesion_mask == 5), scale, WM_vol)  # Medular
     write_lesions_details(out, types[4], seg_labelsC, seg_numC, scale, vol_ice, lesion_number)
+    #out.write(Template('\\vspace*{10pt}\n').safe_substitute())
+    out.write(Template('\\vspace*{5pt}\n').safe_substitute())
     lesion_number += seg_numC
     write_lesions_details(out, types[5], seg_labelsM, seg_numM, scale, vol_ice, lesion_number)
     lesion_number += seg_numM
@@ -485,7 +517,11 @@ def load_latex_packages(out):
     out.write(Template('\\usepackage[english]{babel}\n').safe_substitute())
     out.write(Template('\\usepackage{graphicx}\n').safe_substitute())
     out.write(Template('\\usepackage[cm]{fullpage}\n').safe_substitute())
-    out.write(Template('\\usepackage{tabularx}\n').safe_substitute())
+    #out.write(Template('\\usepackage{tabularx}\n').safe_substitute())
+    out.write(Template('\\usepackage{ltablex}\n').safe_substitute())  # to correctly handle long tables spanning more than one page
+    out.write(Template('\\keepXColumns\n').safe_substitute())  # for ltablex to give similar results than tabularx
+    out.write(Template('\\setlength{\\LTpre}{0pt}\n').safe_substitute())  # for ltablex to not add space before tables and give similar results than tabularx
+    out.write(Template('\\setlength{\\LTpost}{0pt}\n').safe_substitute())  # for ltablex to not add space before tables and give similar results than tabularx
     out.write(Template('\\usepackage{array}\n').safe_substitute())
     out.write(Template('\\usepackage{multirow}\n').safe_substitute())
     out.write(Template('\\usepackage{subfig}\n').safe_substitute())
@@ -713,18 +749,30 @@ def get_structures_seg(out, vols_structures, vol_ice, bounds_df):
     out.write(Template('\n').safe_substitute())
 
 
+def write_3images(out, title, filenames):
+    assert(len(filenames)==3)
+    #out.write(Template('\\vspace*{2pt}\n').safe_substitute())
+    out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
+    out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$t}} \\\\\n').safe_substitute(t=title))
+    out.write(Template('\\vspace*{1pt}\n').safe_substitute())  # B: without this, the images are not centered!
+    out.write(Template('\\cellcolor{black} \\centering \\includegraphics[width=0.282\\textwidth]{$f0} \\includegraphics[width=0.282\\textwidth]{$f1} \\includegraphics[width=0.282\\textwidth]{$f2}\\\\\n').safe_substitute(f0=filenames[0], f1=filenames[1], f2=filenames[2]))
+    out.write(Template('\\end{tabularx}\n').safe_substitute())
+
+
 def plot_img(out, plot_images_filenames):
     #titles = ['FLAIR', 'Intracranial cavity segmentation', 'Tissue segmentation', 'Lesion segmentation']
     titles = ['FLAIR', 'Structure segmentation', 'Tissue segmentation', 'Lesion segmentation']
     
     #for i in [1, 2, 0, 3]:
     for i in [2, 1, 0, 3]:
-        out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
-        out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$v}} \\\\\n').safe_substitute(v=titles[i]))
-        out.write(Template('\\end{tabularx}\n').safe_substitute())
-        out.write(Template('\\begin{tabularx}{0.8\\textwidth}{X}\n').safe_substitute())
-        out.write(Template('\\centering \\includegraphics[width=0.25\\textwidth]{$f0} \\includegraphics[width=0.25\\textwidth]{$f1} \\includegraphics[width=0.25\\textwidth]{$f2}\\\\\n').safe_substitute(f0=plot_images_filenames[0, i], f1=plot_images_filenames[1, i], f2=plot_images_filenames[2, i]))
-        out.write(Template('\\end{tabularx}\n').safe_substitute())
+        write_3images(out, titles[i], [plot_images_filenames[0, i], plot_images_filenames[1, i], plot_images_filenames[2, i]])
+        out.write(Template('\\vspace*{2pt}\n').safe_substitute())
+        # out.write(Template('\\begin{tabularx}{0.9\\textwidth}{X}\n').safe_substitute())
+        # out.write(Template('\\rowcolor{volbrain_blue} {\\bfseries \\textcolor{text_white}{$v}} \\\\\n').safe_substitute(v=titles[i]))
+        # out.write(Template('\\end{tabularx}\n').safe_substitute())
+        # out.write(Template('\\begin{tabularx}{0.8\\textwidth}{X}\n').safe_substitute())
+        # out.write(Template('\\centering \\includegraphics[width=0.25\\textwidth]{$f0} \\includegraphics[width=0.25\\textwidth]{$f1} \\includegraphics[width=0.25\\textwidth]{$f2}\\\\\n').safe_substitute(f0=plot_images_filenames[0, i], f1=plot_images_filenames[1, i], f2=plot_images_filenames[2, i]))
+        # out.write(Template('\\end{tabularx}\n').safe_substitute())
     out.write(Template('\\pagebreak\n').safe_substitute())
     out.write(Template('\n').safe_substitute())
     # out.write(Template('\\vspace*{30pt}\n').safe_substitute())
@@ -954,6 +1002,7 @@ def save_images(suffixe,
                 LAB_slice, MASK_slice,
                 colors_ice,
                 colors_lesions, colors_tissue,
+                letters = [],
                 out_height=OUT_HEIGHT, alpha=DEFAULT_ALPHA):
 
     T1_slice = np.rot90(T1_slice)
@@ -963,22 +1012,22 @@ def save_images(suffixe,
     CRISP_slice = np.rot90(CRISP_slice)
 
     out_im = make_slice_with_seg_image_with_alpha_blending(FLAIR_slice, LAB_slice, alpha=alpha, colors=colors_lesions)
-    out_im = make_centered(out_im, out_height, out_height)
+    out_im = make_centered(out_im, out_height, out_height, letters)
     filename_seg = "seg_{}.png".format(suffixe)
     Image.fromarray(out_im, 'RGB').save(filename_seg)
 
     out_im = make_slice_with_seg_image_with_alpha_blending(FLAIR_slice, LAB_slice, alpha=0, colors=colors_lesions)
-    out_im = make_centered(out_im, out_height, out_height)
+    out_im = make_centered(out_im, out_height, out_height, letters)
     filename_flair = "flair_{}.png".format(suffixe)
     Image.fromarray(out_im, 'RGB').save(filename_flair)
 
     out_im = make_slice_with_seg_image_with_alpha_blending(T1_slice, MASK_slice, alpha=alpha, colors=colors_ice)
-    out_im = make_centered(out_im, out_height, out_height)
+    out_im = make_centered(out_im, out_height, out_height, letters)
     filename_ice = "ice_{}.png".format(suffixe)
     Image.fromarray(out_im, 'RGB').save(filename_ice)
 
     out_im = make_slice_with_seg_image_with_alpha_blending(T1_slice, CRISP_slice, alpha=alpha, colors=colors_tissue)
-    out_im = make_centered(out_im, out_height, out_height)
+    out_im = make_centered(out_im, out_height, out_height, letters)
     filename_tissue = "tissue_{}.png".format(suffixe)
     Image.fromarray(out_im, 'RGB').save(filename_tissue)
 
