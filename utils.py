@@ -6,11 +6,6 @@ import numpy as np
 import nibabel as nii
 import math
 import operator
-# from scipy.ndimage.interpolation import zoom
-# from keras.models import load_model
-# from scipy import ndimage
-# import scipy.io as sio
-# import modelos
 import statsmodels.api as sm
 from scipy.signal import argrelextrema
 # from collections import OrderedDict, defaultdict
