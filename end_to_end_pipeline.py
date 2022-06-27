@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser(
     description="""Blabla""", formatter_class=argparse.RawTextHelpFormatter)
 
 parser.add_argument('-f', '--flair_keyword', type=str, required=True)
+parser.add_argument('-b', '--brain_keyword', type=str, required=True)
 parser.add_argument('-t', '--t1_keyword', type=str, required=True)
 parser.add_argument('-i', '--in_folder_path', type=str, required=True)
 parser.add_argument('--no_preprocessing', action='store_true')
@@ -24,11 +25,12 @@ Weights_list = keyword_toList(path='/Weights/', keyword='.h5')
 # preprocessing for training
 if(args.no_preprocessing):
     T1_list = keyword_toList(path=in_folder_path, keyword=args.t1_keyword)
-    FLAIR_list = keyword_toList(path=in_folder_path, keyword=args.FLAIR_keyword)
+    FLAIR_list = keyword_toList(path=in_folder_path, keyword=args.flair_keyword)
+    FG_list = keyword_toList(path=in_folder_path, keyword=args.brain_keyword)
     segmentation(nbNN=[5, 5, 5], ps=[96, 96, 96],
                  Weights_list=Weights_list,
                  T1_list=T1_list, FLAIR_list=FLAIR_list,
-                 FG_list=None, normalization="kde")
+                 FG_list=FG_list, normalization="kde")
 else:
     mni_T1s, mni_FLAIRs, mni_MASKSs, intoT1s, affines, listaT1, listaFLAIR = preprocess_folder(
         in_folder_path,

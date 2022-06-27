@@ -168,9 +168,9 @@ def patch_reconstruct_3D_v2(out_shape, patches, nbNN, offx=1, offy=1, offz=1, cr
 	output = np.zeros(out_shape, patches.dtype)
 	acu = np.zeros(out_shape, patches.dtype)
 	pesos = np.ones((patches.shape[1], patches.shape[2], patches.shape[3]))
-	for x in range(crop_background_border, (nbNN-1)*offx+crop_background_border+1, offx):
-		for y in range(crop_background_border, (nbNN-1)*offy+crop_background_border+1, offy):
-			for z in range(crop_background_border, (nbNN-1)*offz+crop_background_border+1, offz):
+	for x in range(crop_bg, (nbNN-1)*offx+crop_bg+1, offx):
+		for y in range(crop_bg, (nbNN-1)*offy+crop_bg+1, offy):
+			for z in range(crop_bg, (nbNN-1)*offz+crop_bg+1, offz):
 
 				xx = x+patches.shape[1]
 				if xx > input.shape[0]:

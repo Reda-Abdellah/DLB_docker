@@ -26,16 +26,17 @@ RUN apt-get update
 RUN apt -qqy install libfontconfig1 libxt6 libxext6 texlive-xetex
 
 COPY MATLAB/Compilation_lesionBrain_v11_fullpreprocessing/ /opt/deeplesionbrain/
-RUN chmod +x /opt/deeplesionbrain/lesionBrain_v11_fullpreprocessing_exe
-RUN chmod +x /opt/deeplesionbrain/lesionBrain_v11_fullpreprocessing_exe.sh
-RUN chmod +x /opt/deeplesionbrain/IHCorrection/CompilationSPM8/spm8
+
+#RUN chmod +x /opt/deeplesionbrain/lesionBrain_v11_fullpreprocessing_exe
+#RUN chmod +x /opt/deeplesionbrain/lesionBrain_v11_fullpreprocessing_exe.sh
+#RUN chmod +x /opt/deeplesionbrain/IHCorrection/CompilationSPM8/spm8
 
 RUN pip3 install statsmodels  keras==2.2.4 pillow nibabel==2.5.2 scikit-image==0.17.2 pandas
 
 RUN mkdir /Weights
 COPY trained_all_second_step_iqda/ /Weights/
 
-COPY end_to_end_pipeline_file.py end_to_end_pipeline.py make_reports.py modelos.py prediction.py preprocessing.py report_utils.py utils.py header_deeplesionbrain.png female_vb_bounds.pkl male_vb_bounds.pkl average_vb_bounds.pkl README.pdf /opt/deeplesionbrain/
+COPY end_to_end_pipeline_file.py end_to_end_pipeline.py make_reports.py modelos.py prediction.py preprocessing.py report_utils.py utils.py header_deeplesionbrain.png female_vb_bounds.pkl male_vb_bounds.pkl average_vb_bounds.pkl /opt/deeplesionbrain/
 COPY licence_eng_DeepLesionBrain.txt /opt/deeplesionbrain/license.txt
 COPY licence_fr_DeepLesionBrain.txt /opt/deeplesionbrain/licence.txt
 
@@ -44,4 +45,5 @@ COPY licence_fr_DeepLesionBrain.txt /opt/deeplesionbrain/licence.txt
 # RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/libmwcoder_types.so* /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude/
 RUN apt -qqy install libatk1.0-0
 
+#ENTRYPOINT [ "python3", "/opt/deeplesionbrain/end_to_end_pipeline_file.py" ]
 ENTRYPOINT [ "python3", "/opt/deeplesionbrain/end_to_end_pipeline.py" ]

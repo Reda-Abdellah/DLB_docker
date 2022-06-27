@@ -40,9 +40,10 @@ def preprocess_folder(in_folder_path, T1Keyword="T1", FLAIRKeyword='FLAIR'):  # 
 def preprocess_file(nativeT1_name, nativeFLAIR_name, output_dir):  # receives absolute path
 
     print('processing: ' + nativeT1_name + ' and ' + nativeFLAIR_name)
-    matlabBin = './lesionBrain_v11_fullpreprocessing_exe.sh'
+    matlabBin = './run_lesionBrain_v11_fullpreprocessing_exe.sh'
+    runtime_path= '/usr/local/MATLAB/MATLAB_Runtime/v93/'
     #command = matlabBin + ' ' + stringify(nativeT1_name) + ' ' + stringify(nativeFLAIR_name)
-    command = "{} {} {}".format(matlabBin, stringify(nativeT1_name), stringify(nativeFLAIR_name))
+    command = "{} {} {} {}".format(matlabBin, runtime_path, stringify(nativeT1_name), stringify(nativeFLAIR_name))
     print("command=", command)
     run_command(command)
 

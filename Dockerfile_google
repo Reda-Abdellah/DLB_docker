@@ -16,19 +16,9 @@ RUN curl -LO http://ssd.mathworks.com/supportfiles/downloads/R2017b/deployment_f
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBCONF_NONINTERACTIVE_SEEN=true
 WORKDIR /opt/deeplesionbrain
-ENV LD_LIBRARY_PATH=/usr/local/MATLAB/MATLAB_Runtime/v93/runtime/glnxa64:/usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64:/usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64:/usr/local/MATLAB/MATLAB_Runtime/v93/sys/opengl/lib/glnxa64:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
-ENV XAPPLRESDIR=/usr/local/MATLAB/MATLAB_Runtime/v93/X11/app-defaults
-ENV MCR_CACHE_VERBOSE=true
-ENV MCR_CACHE_ROOT=/tmp
-RUN mkdir /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude
-RUN mkdir /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/exclude
-RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/libstdc++.so.6.* /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude/
-RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/libfreetype* /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/exclude/
-RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse  >> /etc/apt/sources.list
-RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse  >> /etc/apt/sources.list
-RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse  >> /etc/apt/sources.list
-RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse  >> /etc/apt/sources.list
-RUN echo deb http://archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse  >> /etc/apt/sources.list
+
+
+
 RUN apt-get update
 RUN apt -qqy install libx11-dev xserver-xorg libfontconfig1 libxt6 libxcomposite1 libasound2 libxext6 texlive-xetex
 RUN apt -qqy install wget
@@ -45,10 +35,29 @@ RUN rm -f trained_all_second_step_iqda.zip
 RUN rm -f Compilation_lesionBrain_v10.zip
 RUN apt -qqy install git
 RUN chmod 777 -R /opt/deeplesionbrain/*
-#RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
-#RUN mv DLB_docker/* /opt/deeplesionbrain
-COPY * /opt/deeplesionbrain/
-RUN mkdir /data/
+RUN git clone https://github.com/Reda-Abdellah/DLB_docker.git
+RUN mv DLB_docker/* /opt/deeplesionbrain
+#COPY * /opt/deeplesionbrain/
+
+RUN mv /opt/deeplesionbrain/run_lesionBrain_v11_fullpreprocessing_exe.sh /opt/deeplesionbrain/lesionBrain_v11_fullpreprocessing_exe.sh 
+
+#RUN chmod +x /opt/deeplesionbrain/lesionBrain_v11_fullpreprocessing_exe
+#RUN chmod +x /opt/deeplesionbrain/lesionBrain_v11_fullpreprocessing_exe.sh
+#RUN chmod +x /opt/deeplesionbrain/IHCorrection/CompilationSPM8/spm8
+
+RUN mkdir /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude
+RUN mkdir /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/exclude
+RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/libstdc++.so.6.* /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude/
+RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/libfreetype* /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/exclude/
 RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/libmwcoder_types.so* /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude/
+
+
+RUN mkdir /data/
 RUN apt -qqy install libatk1.0-0
+
+
+#RUN cat ./lesionBrain_v11_fullpreprocessing_exe.sh
+#RUN mv /usr/local/MATLAB/MATLAB_Runtime/v93/bin/glnxa64/libmwcoder_types.so* /usr/local/MATLAB/MATLAB_Runtime/v93/sys/os/glnxa64/exclude/
+
 ENTRYPOINT [ "python3", "/opt/deeplesionbrain/end_to_end_pipeline_file.py" ]
+#ENTRYPOINT [ "bash"]
