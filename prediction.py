@@ -38,7 +38,8 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from tensorflow.python.util import deprecation
 deprecation._PRINT_DEPRECATION_WARNINGS = False
 # Use only first GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+if not "CUDA_VISIBLE_DEVICES" in os.environ:
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 # Use only necessary memory
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
